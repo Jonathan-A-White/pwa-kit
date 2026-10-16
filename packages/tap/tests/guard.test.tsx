@@ -159,11 +159,15 @@ function Screen({ guarded }: { guarded: boolean }) {
   const guard = useTapGuard();
   const g = <A extends unknown[]>(h: (...a: A) => void) => (guarded ? guard(h) : h);
   const [open, setOpen] = useState(false);
-  return createElement(
-    'div',
-    null,
-    createElement('button', { onClick: g(() => setOpen(true)) }, 'Open'),
-    open ? createElement('div', { 'data-testid': 'backdrop', onClick: g(() => setOpen(false)) }, 'Sheet') : null,
+  return (
+    <div>
+      <button onClick={g(() => setOpen(true))}>Open</button>
+      {open ? (
+        <div data-testid="backdrop" onClick={g(() => setOpen(false))}>
+          Sheet
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -171,28 +175,28 @@ describe('a double tap on a control that opens a sheet', () => {
   const wait = (ms: number) => vi.advanceTimersByTimeAsync(ms);
 
   it('closes the sheet again when nothing guards it (the bug)', async () => {
-    render(createElement(Screen, { guarded: false }));
+    render(<Screen guarded={false} />);
     const { second } = await twoTaps(screen.getByText('Open'), () => screen.queryByTestId('backdrop'), { wait });
     expect(second).not.toBeNull();
     expect(screen.queryByTestId('backdrop')).toBeNull();
   });
 
   it('leaves the sheet open when both controls share useTapGuard', async () => {
-    render(createElement(Screen, { guarded: true }));
+    render(<Screen guarded />);
     const { second } = await twoTaps(screen.getByText('Open'), () => screen.queryByTestId('backdrop'), { wait });
     expect(second).not.toBeNull();
     expect(screen.getByTestId('backdrop')).toBeTruthy();
   });
 
   it('lets a deliberate second tap close it, 301 ms later', async () => {
-    render(createElement(Screen, { guarded: true }));
+    render(<Screen guarded />);
     await twoTaps(screen.getByText('Open'), () => screen.queryByTestId('backdrop'), { wait, gapMs: 301 });
     expect(screen.queryByTestId('backdrop')).toBeNull();
   });
 
   it('lets the second tap through when tapSettings.ms is 0', async () => {
     tapSettings.ms = 0;
-    render(createElement(Screen, { guarded: true }));
+    render(<Screen guarded />);
     await twoTaps(screen.getByText('Open'), () => screen.queryByTestId('backdrop'), { wait });
     expect(screen.queryByTestId('backdrop')).toBeNull();
   });
