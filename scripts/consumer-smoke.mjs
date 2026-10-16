@@ -1,12 +1,14 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the six entry points (and package.json), nothing else;
+//   - the exports map names the eight entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
 //     reaches no other pwa-kit library;
 //   - 'pwa-kit/test-preset' imports with no dependency and filters the timing tests as MW_TIMING asks;
-//   - 'pwa-kit/alive' imports with the app's React and its import graph reaches no other pwa-kit library.
+//   - 'pwa-kit/alive' imports with the app's React and its import graph reaches no other pwa-kit library;
+//   - 'pwa-kit/tap' guards a double tap with the app's React and 'pwa-kit/tap/testing' taps twice; neither reaches
+//     another pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -44,18 +46,20 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the six entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the eight entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
   const expected = [
     './alive',
     './package.json',
+    './tap',
+    './tap/testing',
     './test-preset',
     './tips',
     './whats-new',
     './whats-new/styles.css',
   ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the six entry points');
+  console.log('the exports map names the eight entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -156,6 +160,40 @@ console.log('pwa-kit/alive imports');
 `,
   );
   console.log(run('node', ['alive.mjs'], app).trim());
+
+  // 6. 'pwa-kit/tap' and 'pwa-kit/tap/testing' with the same React: the guard swallows a second call within settleMs, the
+  // hook runs, and twoTapsAt clicks a locator's centre twice (a fake page stands in for Playwright's).
+  for (const file of ['index.js', 'guard.js', 'testing.js', 'index.d.ts']) {
+    if (!existsSync(join(installed, 'packages/tap/dist', file))) throw new Error(`packages/tap/dist/${file} is not packed`);
+  }
+  standsAlone('packages/tap/dist/index.js');
+  standsAlone('packages/tap/dist/testing.js');
+  writeFileSync(
+    join(app, 'tap.mjs'),
+    `
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import { createTapGuard, tapSettings, useSettled, useTapGuard } from 'pwa-kit/tap';
+import { twoTaps, twoTapsAt } from 'pwa-kit/tap/testing';
+
+let runs = 0;
+const run = createTapGuard()(() => runs++);
+run();
+run();
+if (runs !== 1 || tapSettings.ms !== 300) throw new Error('tap guard');
+const Probe = () => {
+  useTapGuard();
+  return createElement('p', null, String(useSettled()()));
+};
+if (!renderToString(createElement(Probe)).includes('false')) throw new Error('useSettled');
+const clicks = [];
+const page = { mouse: { click: async (x, y) => void clicks.push([x, y]) } };
+await twoTapsAt(page, { boundingBox: async () => ({ x: 0, y: 0, width: 10, height: 10 }) }, { gapMs: 1 });
+if (JSON.stringify(clicks) !== '[[5,5],[5,5]]' || typeof twoTaps !== 'function') throw new Error('twoTapsAt');
+console.log('pwa-kit/tap imports');
+`,
+  );
+  console.log(run('node', ['tap.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);

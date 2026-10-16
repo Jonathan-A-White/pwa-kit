@@ -14,12 +14,15 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
   [packages/test-preset](packages/test-preset/README.md).
 - `@pwa-kit/alive`: `useAlive()`, a guard for a React `setState` that runs after an await. See
   [packages/alive](packages/alive/README.md).
+- `@pwa-kit/tap`: a shared tap guard (a tap that opens, closes or moves the view swallows a second tap within 300 ms; a
+  control just drawn ignores taps for 300 ms) with React hooks, and `pwa-kit/tap/testing`, a two-tap helper for jsdom and
+  Playwright. See [packages/tap](packages/tap/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
 kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
 service worker's registration. Each library imports nothing from the other; a test in each says so.
 
-What's new needs React 18 or later (`react`, `react-dom`) and alive needs `react`; tips and test-preset need none. React
+What's new needs React 18 or later (`react`, `react-dom`) and alive and tap need `react` (tap's core, `createTapGuard`, and its testing helper need none); tips and test-preset need none. React
 is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them.
 
 ## Install
@@ -32,7 +35,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0, so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0 and tap with 0.3.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -133,6 +136,31 @@ function Profile({ url }: { url: string }) {
 }
 ```
 
+`pwa-kit/tap`: a sheet that opens on a tap, its backdrop's close guarded, so the second tap of a double tap cannot close it;
+and `pwa-kit/tap/testing` to prove it.
+
+```tsx
+import { useState } from 'react';
+import { useTapGuard } from 'pwa-kit/tap';
+import { twoTaps } from 'pwa-kit/tap/testing';
+
+function Screen() {
+  const guard = useTapGuard(); // one guard per screen, shared by the controls that change the view
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button onClick={guard(() => setOpen(true))}>Open</button>
+      {open && <div data-testid="backdrop" onClick={guard(() => setOpen(false))}>Sheet</div>}
+    </>
+  );
+}
+
+// in a test (jsdom): the second tap lands on the backdrop 120 ms later, and is swallowed
+await twoTaps(screen.getByText('Open'), () => screen.queryByTestId('backdrop'));
+expect(screen.getByTestId('backdrop')).toBeTruthy();
+// in Playwright: await twoTapsAt(page, page.getByRole('button', { name: 'Open' }));
+```
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -142,6 +170,8 @@ function Profile({ url }: { url: string }) {
 | `pwa-kit/tips` | `tips` (`createTips`) | one-time tips, dismissed for good |
 | `pwa-kit/test-preset` | `vitestTimeouts`, `ASYNC_WAIT_MS`, `HOOK_TIMEOUT_MS`, `playwrightTimeouts`, `timingFilter`, `playwrightTimingFilter`, `settleAfterTeardown` | test timeouts for a loaded host, the `MW_TIMING` filter |
 | `pwa-kit/alive` | `useAlive` | a guard for a `setState` after an await (React) |
+| `pwa-kit/tap` | `createTapGuard`, `useTapGuard`, `useSettled`, `tapSettings`, `TAP_SETTLE_MS` | a tap guard: a second tap within 300 ms is swallowed; a control just drawn ignores taps |
+| `pwa-kit/tap/testing` | `twoTaps`, `twoTapsAt` | a double tap for jsdom and Playwright tests |
 
 ## Develop
 

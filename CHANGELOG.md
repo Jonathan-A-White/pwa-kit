@@ -8,6 +8,16 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/tips](packages/tips/CHANGELOG.md)
 - [@pwa-kit/test-preset](packages/test-preset/CHANGELOG.md)
 - [@pwa-kit/alive](packages/alive/CHANGELOG.md)
+- [@pwa-kit/tap](packages/tap/CHANGELOG.md)
+
+## 0.3.0 (2026-10-16, not yet tagged)
+
+- New: `pwa-kit/tap`: `createTapGuard`, `useTapGuard`, `useSettled` and the `tapSettings.ms` seam. A tap that opens, closes or
+  moves the view swallows a second tap within 300 ms; a control just drawn ignores taps for 300 ms (mw-iioh3i.1). React
+  is its optional peer.
+- New: `pwa-kit/tap/testing`: `twoTaps` for jsdom and `twoTapsAt` for Playwright, a double tap 120 ms apart. It imports
+  nothing.
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0.
 
 ## 0.2.0 (2026-10-16, not yet tagged)
 
