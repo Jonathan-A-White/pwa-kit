@@ -1,0 +1,31 @@
+{
+  "name": "@pwa-kit/tap",
+  "version": "0.1.0",
+  "description": "pwa-kit: a shared tap guard for a touch screen (a tap that opens, closes or moves the view swallows a second tap within 300 ms; a control just drawn ignores taps for 300 ms), React hooks for it, and a two-tap helper for jsdom and Playwright tests.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    }
+  },
+  "files": [
+    "dist/**",
+    "!**/*.tsbuildinfo"
+  ],
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}
