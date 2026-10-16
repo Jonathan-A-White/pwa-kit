@@ -10,6 +10,14 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/alive](packages/alive/CHANGELOG.md)
 - [@pwa-kit/tap](packages/tap/CHANGELOG.md)
 - [@pwa-kit/day](packages/day/CHANGELOG.md)
+- [@pwa-kit/launch-gate](packages/launch-gate/CHANGELOG.md)
+
+## 0.5.0 (2026-10-16, not yet tagged)
+
+- New: `pwa-kit/launch-gate`: `openWithin` and the React `LaunchGate`. The gate opens the app's store with a timeout, says
+  what it waits on after 3 s, offers Try again after 10 s, and at 15 s or on a throw says it failed with Try again
+  (mw-iioh3i.3). React is its optional peer.
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0.
 
 ## 0.4.0 (2026-10-16, not yet tagged)
 

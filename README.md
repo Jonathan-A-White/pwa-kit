@@ -20,12 +20,15 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
 - `@pwa-kit/day`: the user's own calendar day as a `'YYYY-MM-DD'` key (`localDay`, `dayStart`, `addDays`, `isDay`), never the UTC
   day, and `pwa-kit/day/eslint`, an ESLint rule (`no-utc-day`) against `toISOString().split('T')[0]`, `.slice(0, 10)` and
   `new Date('YYYY-MM-DD')`. See [packages/day](packages/day/README.md).
+- `@pwa-kit/launch-gate`: a launch gate that opens the app's store (`openWithin`, and the React `<LaunchGate>`) with a
+  timeout: it says what it waits on after 3 s, offers Try again after 10 s, and at 15 s or on a throw says it failed with
+  Try again. See [packages/launch-gate](packages/launch-gate/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
 kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
 service worker's registration. Each library imports nothing from the other; a test in each says so.
 
-What's new needs React 18 or later (`react`, `react-dom`) and alive and tap need `react` (tap's core, `createTapGuard`, and its testing helper need none); tips and test-preset need none. React
+What's new needs React 18 or later (`react`, `react-dom`) and alive, tap and launch-gate need `react` (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
 is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them. day needs
 nothing; ESLint 9 is the optional peer of `pwa-kit/day/eslint` alone.
 
@@ -39,7 +42,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0, tap with 0.3.0 and day with 0.4.0, so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 and launch-gate with 0.5.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -184,6 +187,19 @@ export default [/* ... */ dayLint];
 A real UTC key (a server's) is kept with `// eslint-disable-next-line pwa-kit-day/no-utc-day -- <the reason>`. See
 [packages/day](packages/day/README.md).
 
+`pwa-kit/launch-gate`: the app's store opens behind a gate that says what is happening.
+
+```tsx
+import { LaunchGate } from 'pwa-kit/launch-gate';
+
+<LaunchGate open={() => db.open()} waitingOn="your notes">
+  {(db) => <App db={db} />}
+</LaunchGate>;
+// Opening… at once; Still waiting for your notes… at 3 s; Try again from 10 s; Could not open. at 15 s or on a throw
+```
+
+Do not put a full-table scan in Dexie's `on('ready')`: `open()` waits for it. See [packages/launch-gate](packages/launch-gate/README.md).
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -197,6 +213,7 @@ A real UTC key (a server's) is kept with `// eslint-disable-next-line pwa-kit-da
 | `pwa-kit/tap/testing` | `twoTaps`, `twoTapsAt` | a double tap for jsdom and Playwright tests |
 | `pwa-kit/day` | `localDay`, `dayStart`, `addDays`, `isDay`, `DayError` | the user's own calendar day as a `YYYY-MM-DD` key, never the UTC day |
 | `pwa-kit/day/eslint` | `plugin`, `config` (also the default export) | the ESLint rule `no-utc-day`, and a config object that turns it on |
+| `pwa-kit/launch-gate` | `LaunchGate`, `openWithin`, `LaunchTimeout`, `DEFAULT_LAUNCH_WORDS` | a launch gate: opens the store with a timeout, says what it waits on, offers Try again (React) |
 
 ## Develop
 

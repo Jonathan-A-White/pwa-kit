@@ -1,6 +1,6 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the ten entry points (and package.json), nothing else;
+//   - the exports map names the eleven entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
@@ -10,7 +10,9 @@
 //   - 'pwa-kit/tap' guards a double tap with the app's React and 'pwa-kit/tap/testing' taps twice; neither reaches
 //     another pwa-kit library;
 //   - 'pwa-kit/day' keeps the user's own day and 'pwa-kit/day/eslint' reports the UTC day through ESLint's Linter; neither
-//     reaches another pwa-kit library.
+//     reaches another pwa-kit library;
+//   - 'pwa-kit/launch-gate' opens a store through openWithin and says Opening… with the app's React; its import graph
+//     reaches no other pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -48,12 +50,13 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the ten entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the eleven entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
   const expected = [
     './alive',
     './day',
     './day/eslint',
+    './launch-gate',
     './package.json',
     './tap',
     './tap/testing',
@@ -63,7 +66,7 @@ try {
     './whats-new/styles.css',
   ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the ten entry points');
+  console.log('the exports map names the eleven entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -230,6 +233,30 @@ console.log('pwa-kit/day imports');
 `,
   );
   console.log(run('node', ['day.mjs'], app).trim());
+
+  // 8. 'pwa-kit/launch-gate' with the same React: openWithin resolves, aborts at the timeout, and the gate says Opening…
+  // (renderToString runs no effects, so the first paint is the opening word).
+  for (const file of ['index.js', 'openWithin.js', 'LaunchGate.js', 'index.d.ts']) {
+    if (!existsSync(join(installed, 'packages/launch-gate/dist', file))) throw new Error(`packages/launch-gate/dist/${file} is not packed`);
+  }
+  standsAlone('packages/launch-gate/dist/index.js');
+  writeFileSync(
+    join(app, 'launch-gate.mjs'),
+    `
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import { LaunchGate, LaunchTimeout, openWithin } from 'pwa-kit/launch-gate';
+
+if ((await openWithin(async () => 'db')) !== 'db') throw new Error('openWithin');
+let seen;
+const error = await openWithin((signal) => ((seen = signal), new Promise(() => {})), { timeoutMs: 20 }).catch((e) => e);
+if (!(error instanceof LaunchTimeout) || !seen.aborted) throw new Error('timeout');
+const html = renderToString(createElement(LaunchGate, { open: async () => 'db' }, () => createElement('p', null, 'app')));
+if (!html.includes('bk-launch-gate') || !html.includes('Opening')) throw new Error('launch-gate html: ' + html);
+console.log('pwa-kit/launch-gate imports');
+`,
+  );
+  console.log(run('node', ['launch-gate.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);
