@@ -1,0 +1,27 @@
+{
+  "name": "@pwa-kit/launch-gate",
+  "version": "0.1.0",
+  "description": "pwa-kit: a launch gate that opens the app's store with a timeout (openWithin), says what it waits on after 3 s, offers Try again after 10 s, and at 15 s or on a throw says it failed with Try again (LaunchGate, React).",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**",
+    "!**/*.tsbuildinfo"
+  ],
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}
