@@ -1,0 +1,145 @@
+# pwa-kit
+
+What every installed web app shows about itself, for React web apps on a phone. Two small TypeScript libraries, lifted
+from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where they lived until 2026-10-16:
+
+- `@pwa-kit/whats-new`: an app's What's new, from its `changelog.json`: the summary for an Update ready banner
+  (`0.5.9 · 1 new, 2 fixed · What's new`), a sheet shown once after an update (never on a first install), the list of
+  versions for Settings or About, a Check for updates button, and the link from the version to `CHANGELOG.md` on GitHub.
+  A React package, themed by CSS custom properties. See [packages/whats-new](packages/whats-new/README.md).
+- `@pwa-kit/tips`: a list of one-time tips, which one to show now, and dismissed for good through a storage the app
+  injects. No UI and no DOM. See [packages/tips](packages/tips/README.md).
+
+What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
+kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
+service worker's registration. Each library imports nothing from the other; a test in each says so.
+
+What's new needs React 18 or later (`react`, `react-dom`); tips needs none. React is an optional peer dependency, so an
+app that uses only tips installs no React for it.
+
+## Install
+
+From GitHub, by full commit SHA (there is no registry and no tag yet); `prepare` builds the libraries on install. An app
+pins a commit, never a branch:
+
+```bash
+npm install github:Jonathan-A-White/pwa-kit#<full commit SHA>
+```
+
+The SHA to pin is named in the closing comment of the story that last changed this repo, and in the section for a
+release in [CHANGELOG.md](CHANGELOG.md) once there is one.
+
+npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
+with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
+example:
+
+```json
+"allowScripts": { "github:Jonathan-A-White/pwa-kit#<full commit SHA>": true }
+```
+
+Check that `package-lock.json` resolves it as `git+https://github.com/Jonathan-A-White/pwa-kit.git#<the SHA>`, not
+`git+ssh`, so a machine with no GitHub key installs it too.
+
+### Moving from bsv-kit
+
+The entry points keep their last segment, so the move is one word per import: `bsv-kit/whats-new` becomes
+`pwa-kit/whats-new`, and the same for `whats-new/styles.css` and `tips`. Change any vitest alias or `vi.mock` path that
+names them too. Nothing else changes: the `bk-` class names and `--bk-whats-new-*` properties keep their names
+(historical, from bsv-kit; apps already theme them), and tips' default storage key stays `bsv-kit:tips:dismissed`, so
+a tip an app's user already dismissed stays dismissed.
+
+## Examples
+
+`pwa-kit/whats-new` and its stylesheet: the sheet shown once after an update, and the versions list in About.
+
+```tsx
+import { WhatsNewSheet, WhatsNewList, CheckForUpdates, useChangelog } from 'pwa-kit/whats-new';
+import 'pwa-kit/whats-new/styles.css'; // its default look, themed by --bk-whats-new-* properties
+
+export function About({ version }: { version: string }) {
+  const entries = useChangelog(import.meta.env.BASE_URL); // reads <base>/changelog.json, null until loaded
+  return (
+    <>
+      <WhatsNewSheet entries={entries} version={version} storageKey="myapp.lastSeenVersion" />
+      <WhatsNewList entries={entries} />
+      <CheckForUpdates />
+    </>
+  );
+}
+```
+
+`pwa-kit/tips`: show each tip once, framework-free.
+
+```ts
+import { tips } from 'pwa-kit/tips';
+
+const t = tips.createTips({
+  tips: [{ id: 'long-press', text: 'Long-press a word to hear it.', event: 'reader-opened' }],
+  storage: localStorage, // any { getItem, setItem }, sync or async
+  key: 'myapp:tips', // optional: where the dismissed ids are kept
+});
+
+const tip = await t.nextTip('reader-opened'); // the first tip of that event not yet dismissed, or null
+if (tip) {
+  console.log(tip.text);
+  await t.dismiss(tip.id); // dismissed for good
+}
+```
+
+## Modules
+
+| Entry point | Exports | What it is |
+| --- | --- | --- |
+| `pwa-kit/whats-new` | `WhatsNewSheet`, `WhatsNewList`, `UpdateSummary`, `CheckForUpdates`, `useChangelog`, `summarise`, `versionLink`, ... | the app's What's new (React) |
+| `pwa-kit/whats-new/styles.css` | | its default look |
+| `pwa-kit/tips` | `tips` (`createTips`) | one-time tips, dismissed for good |
+
+## Develop
+
+Node 20 or later. See [CONTRIBUTING.md](CONTRIBUTING.md). The gate:
+
+```bash
+npm ci --no-audit --no-fund && npm run lint && npm run typecheck && npm test && npm run build
+```
+
+## Credits
+
+> "If I have seen further it is by standing on the shoulders of Giants."
+> Isaac Newton, letter to Robert Hooke, 1675
+
+pwa-kit stands on the work below. Each credit gives what it is used for, its licence and any changes made. None of it is
+changed by us: we use each as published.
+
+A source added or removed changes its credit in the same commit, and the credits test says so: each credit ends with its
+`Kind:` (package, tool, service, idea, font or data); a package credit fails when that package is no longer in a package.json,
+and every bundled font or data file must be named in backticks by a font or data credit.
+
+Runtime libraries the app brings (peer dependencies of `@pwa-kit/whats-new` only):
+
+- [React](https://react.dev): `react` and `react-dom`, the UI library `@pwa-kit/whats-new` is written for (18 or later). Licence:
+  [MIT](https://github.com/facebook/react/blob/main/LICENSE). No changes. Kind: package.
+
+Tools used to build and test (not installed by apps):
+
+- [TypeScript](https://github.com/microsoft/TypeScript): the language and compiler. Licence:
+  [Apache-2.0](https://github.com/microsoft/TypeScript/blob/main/LICENSE.txt). No changes. Kind: package.
+- [Vitest](https://vitest.dev): runs the tests. Licence: [MIT](https://github.com/vitest-dev/vitest/blob/main/LICENSE). No changes. Kind: package.
+- [ESLint](https://eslint.org): the linter. Licence: [MIT](https://github.com/eslint/eslint/blob/main/LICENSE). No changes. Kind: package.
+- [@testing-library/react](https://testing-library.com/docs/react-testing-library/intro): renders What's new in its
+  tests. Licence: [MIT](https://github.com/testing-library/react-testing-library/blob/main/LICENSE). No changes. Kind: package.
+- [@testing-library/dom](https://testing-library.com/docs/dom-testing-library/intro): finds what those tests
+  render. Licence: [MIT](https://github.com/testing-library/dom-testing-library/blob/main/LICENSE). No changes. Kind: package.
+- [jsdom](https://github.com/jsdom/jsdom): the page What's new's tests run in. Licence:
+  [MIT](https://github.com/jsdom/jsdom/blob/main/LICENSE.txt). No changes. Kind: package.
+
+Projects and ideas we took:
+
+- [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit): these two libraries, their tests and this repo's tooling lived there first and were
+  moved here at one commit, named in each package's changelog. Licence: [MIT](https://github.com/Jonathan-A-White/bsv-kit/blob/main/LICENSE).
+  Kind: idea.
+- [Beads](https://github.com/steveyegge/beads): Steve Yegge's issue tracker for AI agents; the work on this repo is tracked in it.
+  Licence: [MIT](https://github.com/steveyegge/beads/blob/main/LICENSE). Used as published. Kind: tool.
+- [Gas Town](https://github.com/steveyegge/gastown): Steve Yegge's idea of a factory of coordinating agent roles, which shaped how
+  this repo is built. Licence: [MIT](https://github.com/steveyegge/gastown/blob/main/LICENSE). We took the idea, not its code. Kind: idea.
+- [Claude Code](https://www.anthropic.com/claude-code): Anthropic's coding agent, which writes the code in this repo under the
+  Governor's direction. Licence: [commercial terms](https://www.anthropic.com/legal/commercial-terms). Used as a tool. Kind: tool.
