@@ -1,0 +1,31 @@
+{
+  "name": "@pwa-kit/day",
+  "version": "0.1.0",
+  "description": "pwa-kit: the user's own calendar day as a YYYY-MM-DD key (localDay, dayStart, addDays, isDay), never the UTC day, and an ESLint rule, no-utc-day, against the UTC day cut from toISOString() or parsed from a bare date string.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./eslint": {
+      "types": "./dist/eslint.d.ts",
+      "default": "./dist/eslint.js"
+    }
+  },
+  "files": [
+    "dist/**",
+    "!**/*.tsbuildinfo"
+  ],
+  "peerDependencies": {
+    "eslint": ">=9"
+  },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    }
+  }
+}
