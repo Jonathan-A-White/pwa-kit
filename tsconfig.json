@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "pwa-kit/tips": ["packages/tips/src/index.ts"]
+    }
+  },
+  "include": ["packages/*/src", "packages/*/tests", "vitest.config.ts", "eslint.config.js"],
+  "exclude": ["packages/whats-new", "**/dist"]
+}
