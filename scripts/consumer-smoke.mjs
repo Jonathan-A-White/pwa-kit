@@ -1,10 +1,12 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the four entry points (and package.json), nothing else;
+//   - the exports map names the six entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
-//     reaches no other pwa-kit library.
+//     reaches no other pwa-kit library;
+//   - 'pwa-kit/test-preset' imports with no dependency and filters the timing tests as MW_TIMING asks;
+//   - 'pwa-kit/alive' imports with the app's React and its import graph reaches no other pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -42,11 +44,18 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the four entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the six entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
-  const expected = ['./package.json', './tips', './whats-new', './whats-new/styles.css'];
+  const expected = [
+    './alive',
+    './package.json',
+    './test-preset',
+    './tips',
+    './whats-new',
+    './whats-new/styles.css',
+  ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the four entry points');
+  console.log('the exports map names the six entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -85,6 +94,25 @@ console.log('pwa-kit/tips imports');
   );
   console.log(run('node', ['tips.mjs'], app).trim());
 
+  // 3b. 'pwa-kit/test-preset' resolves, needs no install of its own, and filters as MW_TIMING asks.
+  for (const file of ['index.js', 'timeouts.js', 'timing.js', 'teardown.js']) {
+    if (!existsSync(join(installed, 'packages/test-preset/dist', file))) throw new Error(`packages/test-preset/dist/${file} is not packed`);
+  }
+  standsAlone('packages/test-preset/dist/index.js');
+  writeFileSync(
+    join(app, 'test-preset.mjs'),
+    `
+import { HOOK_TIMEOUT_MS, playwrightTimeouts, settleAfterTeardown, timingFilter, vitestTimeouts } from 'pwa-kit/test-preset';
+
+if (vitestTimeouts.hookTimeout !== HOOK_TIMEOUT_MS || playwrightTimeouts.timeout < 60_000) throw new Error('timeouts');
+const env = { MW_TIMING: 'only', MW_TIMING_TESTS: 'tests/timing/**' };
+if (timingFilter({ include: ['tests/**'], env }).include[0] !== 'tests/timing/**') throw new Error('timing filter');
+if ((await settleAfterTeardown(() => {})).length !== 0) throw new Error('settleAfterTeardown');
+console.log('pwa-kit/test-preset imports');
+`,
+  );
+  console.log(run('node', ['test-preset.mjs'], app).trim());
+
   // 4. 'pwa-kit/whats-new' with the React the app brings: it renders, its stylesheet is packed, and its import graph
   // reaches no other pwa-kit library.
   run('npm', ['install', '--no-audit', '--no-fund', 'react@19', 'react-dom@19'], app, { timeout: 480_000 });
@@ -112,6 +140,22 @@ console.log('pwa-kit/whats-new renders');
 `,
   );
   console.log(run('node', ['whats-new.mjs'], app).trim());
+
+  // 5. 'pwa-kit/alive' with the same React: the hook runs (renderToString runs no effects, so alive() is its first value).
+  standsAlone('packages/alive/dist/index.js');
+  writeFileSync(
+    join(app, 'alive.mjs'),
+    `
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import { useAlive } from 'pwa-kit/alive';
+
+const Probe = () => createElement('p', null, String(useAlive()()));
+if (!renderToString(createElement(Probe)).includes('true')) throw new Error('useAlive');
+console.log('pwa-kit/alive imports');
+`,
+  );
+  console.log(run('node', ['alive.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);

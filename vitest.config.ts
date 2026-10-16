@@ -5,6 +5,8 @@ export default defineConfig({
   resolve: {
     alias: {
       'pwa-kit/tips': fileURLToPath(new URL('./packages/tips/src/index.ts', import.meta.url)),
+      'pwa-kit/test-preset': fileURLToPath(new URL('./packages/test-preset/src/index.ts', import.meta.url)),
+      'pwa-kit/alive': fileURLToPath(new URL('./packages/alive/src/index.ts', import.meta.url)),
       'pwa-kit/whats-new': fileURLToPath(new URL('./packages/whats-new/src/index.ts', import.meta.url)),
     },
   },

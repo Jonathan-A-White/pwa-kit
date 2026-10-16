@@ -6,9 +6,10 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "pwa-kit/tips": ["packages/tips/src/index.ts"]
+      "pwa-kit/tips": ["packages/tips/src/index.ts"],
+      "pwa-kit/test-preset": ["packages/test-preset/src/index.ts"]
     }
   },
   "include": ["packages/*/src", "packages/*/tests", "vitest.config.ts", "eslint.config.js"],
-  "exclude": ["packages/whats-new", "**/dist"]
+  "exclude": ["packages/whats-new", "packages/alive", "**/dist"]
 }

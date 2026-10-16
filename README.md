@@ -1,7 +1,7 @@
 # pwa-kit
 
-What every installed web app shows about itself, for React web apps on a phone. Two small TypeScript libraries, lifted
-from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where they lived until 2026-10-16:
+What every installed web app shows about itself, for React web apps on a phone, and the test settings that go with such an app. Small TypeScript libraries; the first two
+were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where they lived until 2026-10-16:
 
 - `@pwa-kit/whats-new`: an app's What's new, from its `changelog.json`: the summary for an Update ready banner
   (`0.5.9 · 1 new, 2 fixed · What's new`), a sheet shown once after an update (never on a first install), the list of
@@ -9,13 +9,18 @@ from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where they lived un
   A React package, themed by CSS custom properties. See [packages/whats-new](packages/whats-new/README.md).
 - `@pwa-kit/tips`: a list of one-time tips, which one to show now, and dismissed for good through a storage the app
   injects. No UI and no DOM. See [packages/tips](packages/tips/README.md).
+- `@pwa-kit/test-preset`: vitest and Playwright timeouts sized for a loaded host, the `MW_TIMING` filter for tests that
+  watch a real clock, and `settleAfterTeardown`. Plain data and functions; it imports nothing. See
+  [packages/test-preset](packages/test-preset/README.md).
+- `@pwa-kit/alive`: `useAlive()`, a guard for a React `setState` that runs after an await. See
+  [packages/alive](packages/alive/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
 kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
 service worker's registration. Each library imports nothing from the other; a test in each says so.
 
-What's new needs React 18 or later (`react`, `react-dom`); tips needs none. React is an optional peer dependency, so an
-app that uses only tips installs no React for it.
+What's new needs React 18 or later (`react`, `react-dom`) and alive needs `react`; tips and test-preset need none. React
+is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them.
 
 ## Install
 
@@ -26,8 +31,8 @@ pins a commit, never a branch:
 npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d8dd6
 ```
 
-That commit is the first with both libraries, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0). A later commit is pinned the
-same way, by its full SHA.
+That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
+come with pwa-kit 0.2.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -86,6 +91,48 @@ if (tip) {
 }
 ```
 
+`pwa-kit/test-preset`: three lines in each config, and the timings an app's tests need on a loaded host.
+
+```ts
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+import { timingFilter, vitestTimeouts } from 'pwa-kit/test-preset';
+
+export default defineConfig({
+  test: { ...vitestTimeouts, ...timingFilter({ include: ['tests/**/*.test.ts'] }) }, // MW_TIMING=skip|only reads the rest
+});
+
+// playwright.config.ts
+import { defineConfig } from '@playwright/test';
+import { playwrightTimeouts, playwrightTimingFilter } from 'pwa-kit/test-preset';
+
+export default defineConfig({ ...playwrightTimeouts, ...playwrightTimingFilter({ testMatch: ['**/*.e2e.ts'] }) });
+
+// tests/setup.ts: testing-library's findBy* and waitFor wait this long
+import { configure } from '@testing-library/dom';
+import { ASYNC_WAIT_MS } from 'pwa-kit/test-preset';
+configure({ asyncUtilTimeout: ASYNC_WAIT_MS });
+```
+
+The rule that goes with it: a real-clock wait under the preset's budget (a `setTimeout`, a `waitForTimeout`) needs a
+reason in a comment beside it. The rest of the tests wait on what they are waiting for, or use fake timers. See
+[packages/test-preset](packages/test-preset/README.md).
+
+`pwa-kit/alive`: a `setState` after an await that the screen has closed on.
+
+```tsx
+import { useAlive } from 'pwa-kit/alive';
+
+function Profile({ url }: { url: string }) {
+  const alive = useAlive();
+  const [x, setX] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(url).then((r) => r.text()).then((x) => { if (alive()) setX(x); });
+  }, [url, alive]);
+  return <p>{x}</p>;
+}
+```
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -93,6 +140,8 @@ if (tip) {
 | `pwa-kit/whats-new` | `WhatsNewSheet`, `WhatsNewList`, `UpdateSummary`, `CheckForUpdates`, `useChangelog`, `summarise`, `versionLink`, ... | the app's What's new (React) |
 | `pwa-kit/whats-new/styles.css` | | its default look |
 | `pwa-kit/tips` | `tips` (`createTips`) | one-time tips, dismissed for good |
+| `pwa-kit/test-preset` | `vitestTimeouts`, `ASYNC_WAIT_MS`, `HOOK_TIMEOUT_MS`, `playwrightTimeouts`, `timingFilter`, `playwrightTimingFilter`, `settleAfterTeardown` | test timeouts for a loaded host, the `MW_TIMING` filter |
+| `pwa-kit/alive` | `useAlive` | a guard for a `setState` after an await (React) |
 
 ## Develop
 

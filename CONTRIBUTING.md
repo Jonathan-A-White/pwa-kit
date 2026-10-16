@@ -1,7 +1,8 @@
 # Contributing to pwa-kit
 
-pwa-kit is two small TypeScript libraries for what an installed web app shows about itself (What's new and one-time
-tips), lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit). It is MIT licensed. A change is welcome when it is small, has its test, and leaves the gate green.
+pwa-kit is small TypeScript libraries for what an installed web app shows about itself (What's new and one-time
+tips, lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit)) and for testing such an app (timeouts for a loaded host,
+a guard for a setState after an await). It is MIT licensed. A change is welcome when it is small, has its test, and leaves the gate green.
 
 ## Build and test
 
