@@ -17,13 +17,17 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
 - `@pwa-kit/tap`: a shared tap guard (a tap that opens, closes or moves the view swallows a second tap within 300 ms; a
   control just drawn ignores taps for 300 ms) with React hooks, and `pwa-kit/tap/testing`, a two-tap helper for jsdom and
   Playwright. See [packages/tap](packages/tap/README.md).
+- `@pwa-kit/day`: the user's own calendar day as a `'YYYY-MM-DD'` key (`localDay`, `dayStart`, `addDays`, `isDay`), never the UTC
+  day, and `pwa-kit/day/eslint`, an ESLint rule (`no-utc-day`) against `toISOString().split('T')[0]`, `.slice(0, 10)` and
+  `new Date('YYYY-MM-DD')`. See [packages/day](packages/day/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
 kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
 service worker's registration. Each library imports nothing from the other; a test in each says so.
 
 What's new needs React 18 or later (`react`, `react-dom`) and alive and tap need `react` (tap's core, `createTapGuard`, and its testing helper need none); tips and test-preset need none. React
-is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them.
+is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them. day needs
+nothing; ESLint 9 is the optional peer of `pwa-kit/day/eslint` alone.
 
 ## Install
 
@@ -35,7 +39,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0 and tap with 0.3.0, so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0, tap with 0.3.0 and day with 0.4.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -161,6 +165,25 @@ expect(screen.getByTestId('backdrop')).toBeTruthy();
 // in Playwright: await twoTapsAt(page, page.getByRole('button', { name: 'Open' }));
 ```
 
+`pwa-kit/day`: the day the user's phone shows, not the UTC day, and the lint rule that keeps the other one out.
+
+```ts
+import { addDays, dayStart, localDay } from 'pwa-kit/day';
+
+localDay();               // '2026-10-13' at 22:30 in New York (toISOString().slice(0, 10) says '2026-10-14')
+dayStart('2026-10-14');   // local midnight; new Date('2026-10-14') is UTC midnight, a day early west of UTC
+addDays('2026-10-31', 1); // '2026-11-01', through local calendar fields, so a DST change never skips or repeats a day
+```
+
+```js
+// eslint.config.js
+import dayLint from 'pwa-kit/day/eslint'; // the rule no-utc-day, on as an error
+export default [/* ... */ dayLint];
+```
+
+A real UTC key (a server's) is kept with `// eslint-disable-next-line pwa-kit-day/no-utc-day -- <the reason>`. See
+[packages/day](packages/day/README.md).
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -172,6 +195,8 @@ expect(screen.getByTestId('backdrop')).toBeTruthy();
 | `pwa-kit/alive` | `useAlive` | a guard for a `setState` after an await (React) |
 | `pwa-kit/tap` | `createTapGuard`, `useTapGuard`, `useSettled`, `tapSettings`, `TAP_SETTLE_MS` | a tap guard: a second tap within 300 ms is swallowed; a control just drawn ignores taps |
 | `pwa-kit/tap/testing` | `twoTaps`, `twoTapsAt` | a double tap for jsdom and Playwright tests |
+| `pwa-kit/day` | `localDay`, `dayStart`, `addDays`, `isDay`, `DayError` | the user's own calendar day as a `YYYY-MM-DD` key, never the UTC day |
+| `pwa-kit/day/eslint` | `plugin`, `config` (also the default export) | the ESLint rule `no-utc-day`, and a config object that turns it on |
 
 ## Develop
 

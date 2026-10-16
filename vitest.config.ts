@@ -9,6 +9,9 @@ export default defineConfig({
       // the longer specifier first: an alias matches by prefix
       'pwa-kit/tap/testing': fileURLToPath(new URL('./packages/tap/src/testing.ts', import.meta.url)),
       'pwa-kit/tap': fileURLToPath(new URL('./packages/tap/src/index.ts', import.meta.url)),
+      // the longer specifier first: an alias matches by prefix
+      'pwa-kit/day/eslint': fileURLToPath(new URL('./packages/day/src/eslint.ts', import.meta.url)),
+      'pwa-kit/day': fileURLToPath(new URL('./packages/day/src/index.ts', import.meta.url)),
       'pwa-kit/alive': fileURLToPath(new URL('./packages/alive/src/index.ts', import.meta.url)),
       'pwa-kit/whats-new': fileURLToPath(new URL('./packages/whats-new/src/index.ts', import.meta.url)),
     },

@@ -1,6 +1,6 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the eight entry points (and package.json), nothing else;
+//   - the exports map names the ten entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
@@ -8,7 +8,9 @@
 //   - 'pwa-kit/test-preset' imports with no dependency and filters the timing tests as MW_TIMING asks;
 //   - 'pwa-kit/alive' imports with the app's React and its import graph reaches no other pwa-kit library;
 //   - 'pwa-kit/tap' guards a double tap with the app's React and 'pwa-kit/tap/testing' taps twice; neither reaches
-//     another pwa-kit library.
+//     another pwa-kit library;
+//   - 'pwa-kit/day' keeps the user's own day and 'pwa-kit/day/eslint' reports the UTC day through ESLint's Linter; neither
+//     reaches another pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -46,10 +48,12 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the eight entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the ten entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
   const expected = [
     './alive',
+    './day',
+    './day/eslint',
     './package.json',
     './tap',
     './tap/testing',
@@ -59,7 +63,7 @@ try {
     './whats-new/styles.css',
   ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the eight entry points');
+  console.log('the exports map names the ten entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -194,6 +198,38 @@ console.log('pwa-kit/tap imports');
 `,
   );
   console.log(run('node', ['tap.mjs'], app).trim());
+  // 7. 'pwa-kit/day' and 'pwa-kit/day/eslint': the functions keep a calendar day through a DST change, and the rule runs in
+  // ESLint's own Linter, from the eslint the app installs.
+  for (const file of ['index.js', 'day.js', 'eslint.js', 'eslint.d.ts']) {
+    if (!existsSync(join(installed, 'packages/day/dist', file))) throw new Error(`packages/day/dist/${file} is not packed`);
+  }
+  standsAlone('packages/day/dist/index.js');
+  standsAlone('packages/day/dist/eslint.js');
+  run('npm', ['install', '--no-audit', '--no-fund', 'eslint@9'], app, { timeout: 480_000 });
+  writeFileSync(
+    join(app, 'day.mjs'),
+    `
+import { Linter } from 'eslint';
+import { addDays, dayStart, isDay, localDay } from 'pwa-kit/day';
+import dayLint from 'pwa-kit/day/eslint';
+
+if (localDay(new Date(2026, 9, 13, 22, 30)) !== '2026-10-13' || dayStart('2026-10-14').getDate() !== 14) throw new Error('day');
+if (addDays('2026-10-31', 1) !== '2026-11-01' || addDays('2026-11-01', 1) !== '2026-11-02' || isDay('2026-02-30')) throw new Error('addDays');
+try {
+  dayStart('soon');
+  throw new Error('a bad day did not throw');
+} catch (e) {
+  if (e.name !== 'DayError') throw e;
+}
+const linter = new Linter();
+const report = (code) => linter.verify(code, [dayLint]).map((m) => m.ruleId);
+if (report("const d = new Date().toISOString().slice(0, 10);").join() !== 'pwa-kit-day/no-utc-day') throw new Error('rule: slice');
+if (report("const d = new Date('2026-10-14');").join() !== 'pwa-kit-day/no-utc-day') throw new Error('rule: new Date');
+if (report("const d = new Date('2026-10-14T12:00:00Z').toISOString();").length !== 0) throw new Error('rule: false positive');
+console.log('pwa-kit/day imports');
+`,
+  );
+  console.log(run('node', ['day.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);

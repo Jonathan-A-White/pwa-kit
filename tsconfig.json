@@ -7,6 +7,8 @@
     "baseUrl": ".",
     "paths": {
       "pwa-kit/tips": ["packages/tips/src/index.ts"],
+      "pwa-kit/day/eslint": ["packages/day/src/eslint.ts"],
+      "pwa-kit/day": ["packages/day/src/index.ts"],
       "pwa-kit/test-preset": ["packages/test-preset/src/index.ts"]
     }
   },

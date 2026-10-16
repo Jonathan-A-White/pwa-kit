@@ -1,7 +1,7 @@
 {
   "name": "pwa-kit",
-  "version": "0.3.0",
-  "description": "What every installed web app shows about itself, for React PWAs, and the test settings that go with it: @pwa-kit/whats-new (the Update ready summary, a one-time What's new sheet after an update, the versions list for About, a Check for updates button and the version link to CHANGELOG.md on GitHub, a React package), @pwa-kit/tips (a list of one-time tips, which one to show now, dismissed for good through an injected storage), @pwa-kit/test-preset (vitest and Playwright timeouts sized for a loaded host, the MW_TIMING filter, settleAfterTeardown), @pwa-kit/alive (useAlive(), a guard for a setState after an await) and @pwa-kit/tap (a shared tap guard so the second tap of a double tap is swallowed, and a two-tap helper for jsdom and Playwright).",
+  "version": "0.4.0",
+  "description": "What every installed web app shows about itself, for React PWAs, and the test settings that go with it: @pwa-kit/whats-new (the Update ready summary, a one-time What's new sheet after an update, the versions list for About, a Check for updates button and the version link to CHANGELOG.md on GitHub, a React package), @pwa-kit/tips (a list of one-time tips, which one to show now, dismissed for good through an injected storage), @pwa-kit/test-preset (vitest and Playwright timeouts sized for a loaded host, the MW_TIMING filter, settleAfterTeardown), @pwa-kit/alive (useAlive(), a guard for a setState after an await) @pwa-kit/tap (a shared tap guard so the second tap of a double tap is swallowed, and a two-tap helper for jsdom and Playwright) and @pwa-kit/day (the user's own calendar day as a YYYY-MM-DD key, never the UTC day, and an ESLint rule, no-utc-day, against the UTC day).",
   "license": "MIT",
   "type": "module",
   "repository": {
@@ -40,6 +40,14 @@
       "types": "./packages/tap/dist/testing.d.ts",
       "default": "./packages/tap/dist/testing.js"
     },
+    "./day": {
+      "types": "./packages/day/dist/index.d.ts",
+      "default": "./packages/day/dist/index.js"
+    },
+    "./day/eslint": {
+      "types": "./packages/day/dist/eslint.d.ts",
+      "default": "./packages/day/dist/eslint.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -48,7 +56,7 @@
     "!**/*.tsbuildinfo"
   ],
   "scripts": {
-    "build": "tsc -b packages/whats-new/tsconfig.build.json packages/tips/tsconfig.build.json packages/test-preset/tsconfig.build.json packages/alive/tsconfig.build.json packages/tap/tsconfig.build.json && node -e \"require('node:fs').copyFileSync('packages/whats-new/src/styles.css', 'packages/whats-new/dist/styles.css')\"",
+    "build": "tsc -b packages/whats-new/tsconfig.build.json packages/tips/tsconfig.build.json packages/test-preset/tsconfig.build.json packages/alive/tsconfig.build.json packages/tap/tsconfig.build.json packages/day/tsconfig.build.json && node -e \"require('node:fs').copyFileSync('packages/whats-new/src/styles.css', 'packages/whats-new/dist/styles.css')\"",
     "prepare": "npm run build",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p packages/whats-new/tsconfig.json --noEmit && tsc -p packages/alive/tsconfig.json --noEmit && tsc -p packages/tap/tsconfig.json --noEmit",
@@ -57,10 +65,14 @@
     "smoke": "node scripts/consumer-smoke.mjs"
   },
   "peerDependencies": {
+    "eslint": ">=9",
     "react": ">=18",
     "react-dom": ">=18"
   },
   "peerDependenciesMeta": {
+    "eslint": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },

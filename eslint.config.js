@@ -1,6 +1,8 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
+// pwa-kit's own rule no-utc-day against the UTC day, from the built package (npm ci builds it before lint runs)
+import dayLint from './packages/day/dist/eslint.js';
 
 export default defineConfig([
   globalIgnores(['**/dist', '**/node_modules', 'examples/**/dist']),
@@ -11,4 +13,5 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'error',
     },
   },
+  dayLint,
 ]);

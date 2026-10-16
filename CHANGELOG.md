@@ -9,6 +9,16 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/test-preset](packages/test-preset/CHANGELOG.md)
 - [@pwa-kit/alive](packages/alive/CHANGELOG.md)
 - [@pwa-kit/tap](packages/tap/CHANGELOG.md)
+- [@pwa-kit/day](packages/day/CHANGELOG.md)
+
+## 0.4.0 (2026-10-16, not yet tagged)
+
+- New: `pwa-kit/day`: `localDay`, `dayStart`, `addDays` and `isDay`, the user's own calendar day as a `'YYYY-MM-DD'` key, never the
+  UTC day (mw-iioh3i.2). It imports nothing.
+- New: `pwa-kit/day/eslint`: an ESLint 9 flat-config plugin with the rule `no-utc-day` against
+  `toISOString().split('T')[0]`, `.slice(0, 10)` and `new Date('YYYY-MM-DD')`, and a config object an app puts in its
+  `eslint.config.js`. pwa-kit's own lint uses it. ESLint is its optional peer.
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0.
 
 ## 0.3.0 (2026-10-16, not yet tagged)
 
