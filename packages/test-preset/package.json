@@ -1,0 +1,19 @@
+{
+  "name": "@pwa-kit/test-preset",
+  "version": "0.1.0",
+  "description": "pwa-kit: vitest and Playwright timeouts sized for a loaded host, the MW_TIMING filter for tests that watch a real clock, and settleAfterTeardown for a promise that settles after the page is torn down.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**",
+    "!**/*.tsbuildinfo"
+  ]
+}
