@@ -23,18 +23,18 @@ From GitHub, by full commit SHA (there is no registry and no tag yet); `prepare`
 pins a commit, never a branch:
 
 ```bash
-npm install github:Jonathan-A-White/pwa-kit#<full commit SHA>
+npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d8dd6
 ```
 
-The SHA to pin is named in the closing comment of the story that last changed this repo, and in the section for a
-release in [CHANGELOG.md](CHANGELOG.md) once there is one.
+That commit is the first with both libraries, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0). A later commit is pinned the
+same way, by its full SHA.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
 example:
 
 ```json
-"allowScripts": { "github:Jonathan-A-White/pwa-kit#<full commit SHA>": true }
+"allowScripts": { "github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d8dd6": true }
 ```
 
 Check that `package-lock.json` resolves it as `git+https://github.com/Jonathan-A-White/pwa-kit.git#<the SHA>`, not
