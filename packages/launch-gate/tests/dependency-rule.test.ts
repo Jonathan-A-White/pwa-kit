@@ -22,7 +22,8 @@ describe('packages/launch-gate', () => {
     expect(specifiers.length).toBeGreaterThan(0);
     expect(specifiers.filter((s) => s !== 'react' && !s.startsWith('./'))).toEqual([]);
     for (const s of specifiers.filter((x) => x.startsWith('./'))) {
-      expect(files).toContain(s.replace(/^\.\//, '').replace(/\.js$/, (m) => (files.includes(s.slice(2, -3) + '.tsx') ? '.tsx' : '.ts')));
+      const base = s.replace(/^\.\//, '').replace(/\.js$/, '');
+      expect(files.some((f) => f === `${base}.ts` || f === `${base}.tsx`)).toBe(true);
     }
   });
 

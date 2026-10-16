@@ -72,7 +72,7 @@ describe('<LaunchGate>', () => {
   });
 
   it('says the failed word for a throw that has no message', async () => {
-    render(<LaunchGate open={() => Promise.reject(undefined)} words={{ failed: 'Nope.' }}>{() => <p>app</p>}</LaunchGate>);
+    render(<LaunchGate open={() => Promise.reject<string>(undefined)} words={{ failed: 'Nope.' }}>{() => <p>app</p>}</LaunchGate>);
     await tick(0);
     expect(screen.getByRole('status').textContent).toBe('Nope.');
   });
@@ -105,7 +105,7 @@ describe('<LaunchGate>', () => {
   });
 
   it('Try again after a failure opens again and shows the app when that works', async () => {
-    const open = vi.fn().mockRejectedValueOnce(new Error('locked')).mockResolvedValueOnce('ok');
+    const open = vi.fn<() => Promise<string>>().mockRejectedValueOnce(new Error('locked')).mockResolvedValueOnce('ok');
     render(<LaunchGate open={open}>{(v) => <p>app on {v}</p>}</LaunchGate>);
     await tick(0);
     expect(screen.getByRole('status').textContent).toBe('locked');
