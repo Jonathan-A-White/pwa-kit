@@ -67,15 +67,23 @@ function that says whether the app's changelog has news since it:
 ```ts
 startAppUpdates(deps, {
   version: APP_VERSION,
-  hasNewsSince: (version) => entriesSince(changelog, version).length > 0,
+  hasNewsSince: async (version) => (await readWaitingChangelog()).some((entry) => isAfter(entry, version)),
 });
 ```
 
-When a build waits and `hasNewsSince(version)` is false, it is never offered (the state stays `'none'`): it takes over at
-start-up, or the next time the app is hidden, and nothing reloads, so the next launch runs it. When it is true, the build
-is offered as above. Without `hasNewsSince` the quiet take-over is off and every waiting build is offered (`version` alone does
-nothing). `hasNewsSince` is asked when a build is found and again when the app is hidden; it should answer from what the app
-already has, without waiting.
+`hasNewsSince` may answer now or return a promise (an app may read the waiting build's changelog fresh from the server).
+It is asked once per waiting build.
+
+- `false`: the build is never offered (the state stays `'none'`). It takes over at start-up, or the next time the app is
+  hidden, never while the person uses it, and the page then reloads once the new worker has taken control, so it does not
+  keep running the old build under the new worker. If the take-over landed while the person was looking, the page reloads at
+  the next hide instead; if the person came back before the worker took control, nothing reloads. A take-over that did not
+  happen (the worker was held) is asked for again at the next hide.
+- `true`: the build is offered as above.
+- A rejection, a throw, or an answer that is not a boolean (`null`, `undefined`): the news cannot be judged, so the build is
+  offered. A build is never taken over quietly on a judge that could not answer.
+
+Without `hasNewsSince` the quiet take-over is off and every waiting build is offered (`version` alone does nothing).
 
 ## API
 

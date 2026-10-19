@@ -25,7 +25,7 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
   Try again. See [packages/launch-gate](packages/launch-gate/README.md).
 - `@pwa-kit/app-update`: the PWA update state machine (`startAppUpdates`, `applyUpdate`, the React hook `useUpdateState`): it looks for a
   new build on start, on return to the foreground and every 30 minutes, offers a waiting build, and on the tap reloads once when the
-  new worker takes over, or anyway after 10 s. A build with nothing new in it can take over quietly instead. The banner stays in the
+  new worker takes over, or anyway after 10 s. A build with nothing new in it can take over quietly instead (judged now or later), and the page then reloads out of sight. The banner stays in the
   app. See [packages/app-update](packages/app-update/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
@@ -46,7 +46,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0, so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0), so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for

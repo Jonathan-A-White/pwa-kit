@@ -13,6 +13,15 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/launch-gate](packages/launch-gate/CHANGELOG.md)
 - [@pwa-kit/app-update](packages/app-update/CHANGELOG.md)
 
+## 0.7.0 (2026-10-19, not yet tagged)
+
+- New: `pwa-kit/app-update`'s `hasNewsSince` may return a promise; a rejection or no answer offers the banner (mw-ti1qik.6).
+- Changed: a quiet take-over of a build with nothing new now reloads the page, at start-up or while hidden (at the next hide
+  if it landed while the person was looking), and is asked for again at the next hide if it did not happen. Postern and
+  Legend, which give no `hasNewsSince`, are unaffected.
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0,
+  app-update 0.2.0.
+
 ## 0.6.0 (2026-10-18, not yet tagged)
 
 - New: `pwa-kit/app-update`: `startAppUpdates`, `applyUpdate`, `useUpdateState` and `getUpdateState`, the PWA update state

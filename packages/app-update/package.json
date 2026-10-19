@@ -1,6 +1,6 @@
 {
   "name": "@pwa-kit/app-update",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "pwa-kit: the PWA update state machine (startAppUpdates: look for a new build on start, on return to the foreground and every 30 minutes; offer a waiting build; applyUpdate takes it over and reloads once, or anyway after 10 s), with an optional quiet take-over of a build with nothing new, and the React hook useUpdateState.",
   "license": "MIT",
   "type": "module",
