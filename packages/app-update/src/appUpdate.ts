@@ -6,8 +6,12 @@
 // 'Updating…'. The app also asks the browser whether there is a new build on start, on return to the foreground and every
 // 30 minutes, so a phone that keeps the app open for days still finds out.
 //
-// Optionally (the options' hasNewsSince) a waiting build with nothing new in it is never offered: it takes over quietly at
-// start-up, or when the app is hidden, and nothing reloads. Lifted from Postern's appUpdate.ts at 0.8.26.
+// Optionally (the options' hasNewsSince, which may answer now or later) a waiting build with nothing new in it is never
+// offered: it takes over quietly at start-up, or when the app is hidden, never while the person uses it. The page then
+// reloads, at start-up or while hidden; a take-over that landed while the person was looking reloads at the next hide, so the
+// page does not run the old build under the new worker until the next cold start. A take-over that did not happen is asked
+// for again at the next hide. When the judge cannot answer (it rejects, or says nothing) the build is offered.
+// Lifted from Postern's appUpdate.ts at 0.8.26; the quiet take-over follows Lampas's appUpdate.ts at 0.1.326.
 import { useSyncExternalStore } from 'react';
 
 /** How often a running app asks whether a newer build is up. */
@@ -42,11 +46,14 @@ export interface AppUpdateOptions {
   /** The running build's version, handed to `hasNewsSince`. */
   version?: string;
   /**
-   * Whether the app's changelog has news for the person since `version`. Given, a waiting build for which it says false is
-   * never offered: it takes over quietly at start-up, or when the app is hidden, with no reload. Not given, the quiet
+   * Whether the app's changelog has news for the person since `version`, now or as a promise (the app may read the waiting
+   * build's changelog fresh from the server). Given, a waiting build for which it says false is never offered: it takes over
+   * quietly at start-up, or when the app is hidden, and the page reloads at start-up or while hidden (at the next hide if the
+   * take-over landed while the person was looking). A rejection, a throw or an answer that is not a boolean means the news
+   * cannot be judged: the build is offered, never taken over quietly. Asked once per waiting build. Not given, the quiet
    * take-over is off and every waiting build is offered.
    */
-  hasNewsSince?: (version: string) => boolean;
+  hasNewsSince?: (version: string) => boolean | Promise<boolean>;
 }
 
 export interface AppUpdates {
@@ -99,32 +106,70 @@ export function startAppUpdates(
   let asked = false;
   let patience: ReturnType<typeof setTimeout> | undefined;
   let giveUpAt = 0;
-  // A waiting build with nothing new, kept for when the app is hidden; and the one already taken over, never posted twice.
-  let quietWaiting: WorkerLike | undefined;
-  let tookOver: WorkerLike | undefined;
+  let stopped = false;
+  // A build with nothing new: the worker that is to take over quietly, and whether the page reloads once it has.
+  let quiet: WorkerLike | undefined;
+  let quietAsked: 'start-up' | 'hidden' | undefined;
+  // A quiet take-over landed while the person used the app: the page reloads the next time it is hidden.
+  let reloadWhenHidden = false;
+  // The worker the news judge was asked about, never asked twice.
+  let judged: WorkerLike | undefined;
+  const atStart = registration.waiting;
 
   const hidden = () => document.visibilityState === 'hidden';
 
-  const takeOverQuietly = (worker: WorkerLike) => {
-    quietWaiting = undefined;
-    if (tookOver === worker) return;
-    tookOver = worker;
+  const takeOverQuietly = () => {
+    const worker = quiet;
+    if (!worker) return;
+    // No longer waiting: it took over (or was replaced), so there is nothing left to ask for.
+    if (registration.waiting !== worker) {
+      quiet = undefined;
+      return;
+    }
+    // At start-up (the worker was already waiting when the app opened) or hidden: never while the person uses it.
+    const atStartUp = worker === atStart && !hidden();
+    if (!atStartUp && !hidden()) return;
+    // `quiet` stays until the worker has left the waiting place: a take-over that did not happen is asked for at the next hide.
+    quietAsked = atStartUp ? 'start-up' : 'hidden';
     worker.postMessage({ type: 'SKIP_WAITING' });
   };
 
-  const syncWaiting = (atStart = false) => {
+  const offer = () => {
+    if (state === 'none') setState('ready');
+  };
+
+  const decide = (worker: WorkerLike, news: unknown) => {
+    if (stopped || registration.waiting !== worker) return;
+    // Only a plain false is 'nothing new': anything the judge could not say is offered.
+    if (news !== false) return offer();
+    quiet = worker;
+    takeOverQuietly();
+  };
+
+  const judge = (worker: WorkerLike) => {
+    if (judged === worker) return;
+    judged = worker;
+    if (!hasNewsSince) return offer();
+    let answer: boolean | Promise<boolean>;
+    try {
+      answer = hasNewsSince(version);
+    } catch {
+      return offer();
+    }
+    if (typeof answer === 'object' && answer !== null && typeof answer.then === 'function') {
+      answer.then(
+        (news) => decide(worker, news),
+        () => decide(worker, undefined),
+      );
+    } else decide(worker, answer);
+  };
+
+  const syncWaiting = () => {
     const worker = registration.waiting;
     // The first worker ever has nothing to wait behind: it activates, and claims the page.
     if (worker && container.controller) {
-      if (state !== 'none' || asked) return;
-      if (hasNewsSince && !hasNewsSince(version)) {
-        if (atStart || hidden()) takeOverQuietly(worker);
-        else if (tookOver !== worker) quietWaiting = worker;
-      } else setState('ready');
-    } else if (!asked) {
-      quietWaiting = undefined;
-      setState('none');
-    }
+      if (state === 'none' && !asked) judge(worker);
+    } else if (!asked) setState('none');
   };
 
   const onFound = () => {
@@ -142,7 +187,17 @@ export function startAppUpdates(
     clearTimeout(patience);
     reload();
   };
-  const onControllerChange = reloadOnce;
+  const onControllerChange = () => {
+    if (quietAsked) {
+      // A quiet take-over reloads only out of sight: the person may have come back since the worker was told.
+      const mode = quietAsked;
+      quietAsked = undefined;
+      if (mode === 'start-up' || hidden()) reload();
+      else reloadWhenHidden = true;
+      return;
+    }
+    reloadOnce();
+  };
 
   const checkNow = () => {
     // Offline, or the server is down: the next check tries again.
@@ -150,8 +205,10 @@ export function startAppUpdates(
   };
   const onVisibility = () => {
     if (hidden()) {
-      // The app is out of sight: a build with nothing new takes over now, unless the changelog has news by now.
-      if (quietWaiting) syncWaiting(true);
+      if (reloadWhenHidden) {
+        reloadWhenHidden = false;
+        reload();
+      } else takeOverQuietly();
       return;
     }
     if (document.visibilityState !== 'visible') return;
@@ -165,7 +222,7 @@ export function startAppUpdates(
   document.addEventListener('visibilitychange', onVisibility);
   const every = setInterval(checkNow, UPDATE_CHECK_EVERY_MS);
   onFound();
-  syncWaiting(true);
+  syncWaiting();
   checkNow();
 
   const updates: AppUpdates = {
@@ -181,6 +238,7 @@ export function startAppUpdates(
     },
     checkNow,
     stop() {
+      stopped = true;
       registration.removeEventListener('updatefound', onFound);
       container.removeEventListener('controllerchange', onControllerChange);
       document.removeEventListener('visibilitychange', onVisibility);

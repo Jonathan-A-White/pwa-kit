@@ -270,17 +270,17 @@ describe('the quiet take-over', () => {
     expect(worker.messages).toEqual([]);
   });
 
-  it('takes a build with nothing new over at start-up, never offered, and without a reload', () => {
+  it('takes a build with nothing new over at start-up, never offered, and reloads once when it has (mw-ti1qik.6)', () => {
     const worker = waitingWorker();
     start({ version: '1.0.0', hasNewsSince: () => false });
     expect(getUpdateState()).toBe('none');
     expect(worker.messages).toEqual([{ type: 'SKIP_WAITING' }]);
     container.takeOver();
     vi.advanceTimersByTime(TAKE_OVER_PATIENCE_MS * 3);
-    expect(reload).not.toHaveBeenCalled();
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it('takes a build that installs while the app is open over when the app is hidden', () => {
+  it('takes a build that installs while the app is open over when the app is hidden, and reloads once it has', () => {
     start({ version: '1.0.0', hasNewsSince: () => false });
     const worker = new FakeWorker();
     registration.install(worker);
@@ -290,9 +290,10 @@ describe('the quiet take-over', () => {
     expect(worker.messages).toEqual([{ type: 'SKIP_WAITING' }]);
     setVisibility('visible');
     setVisibility('hidden');
-    expect(worker.messages).toHaveLength(1);
+    // still waiting, so it is asked again at the next hide (mw-ti1qik.6)
+    expect(worker.messages).toHaveLength(2);
     container.takeOver();
-    expect(reload).not.toHaveBeenCalled();
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 
   it('takes a build that installs while the app is hidden over at once', () => {
