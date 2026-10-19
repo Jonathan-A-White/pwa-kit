@@ -23,7 +23,7 @@ README's Credits).
   its own `dist/` (`tsconfig.build.json`); the root `package.json` maps the entry points (`pwa-kit/whats-new`,
   `pwa-kit/tips`, ...) onto those `dist/` folders, and `prepare` builds them on a git install.
 - `scripts/`: `check-personal.mjs`, `credits.mjs` and `consumer-smoke.mjs`, each run by `npm test`.
-- The root `tsconfig.json` typechecks tips, day and the scripts (whats-new, alive, tap and launch-gate have their own, with DOM and JSX); the lint config uses day's built rule (`packages/day/dist`, which `npm ci` builds before lint runs); whats-new has its own `tsconfig.json` (DOM and JSX), and
+- The root `tsconfig.json` typechecks tips, day and the scripts (whats-new, alive, tap, launch-gate and app-update have their own, with DOM and JSX); the lint config uses day's built rule (`packages/day/dist`, which `npm ci` builds before lint runs); whats-new has its own `tsconfig.json` (DOM and JSX), and
   `vitest.config.ts` aliases the entry points to source so the tests run without a build.
 
 ## Proposing a change

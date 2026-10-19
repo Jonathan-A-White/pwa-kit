@@ -1,6 +1,6 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the eleven entry points (and package.json), nothing else;
+//   - the exports map names the twelve entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
@@ -12,7 +12,9 @@
 //   - 'pwa-kit/day' keeps the user's own day and 'pwa-kit/day/eslint' reports the UTC day through ESLint's Linter; neither
 //     reaches another pwa-kit library;
 //   - 'pwa-kit/launch-gate' opens a store through openWithin and says Opening… with the app's React; its import graph
-//     reaches no other pwa-kit library.
+//     reaches no other pwa-kit library;
+//   - 'pwa-kit/app-update' offers a waiting build, takes it over on apply and reloads once, with the app's React; its import
+//     graph reaches no other pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -50,10 +52,11 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the eleven entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the twelve entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
   const expected = [
     './alive',
+    './app-update',
     './day',
     './day/eslint',
     './launch-gate',
@@ -66,7 +69,7 @@ try {
     './whats-new/styles.css',
   ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the eleven entry points');
+  console.log('the exports map names the twelve entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -257,6 +260,38 @@ console.log('pwa-kit/launch-gate imports');
 `,
   );
   console.log(run('node', ['launch-gate.mjs'], app).trim());
+
+  // 9. 'pwa-kit/app-update' with the same React: a waiting build is offered, apply posts SKIP_WAITING, and the controller
+  // change reloads once (a fake container, registration and document stand in for the browser's).
+  for (const file of ['index.js', 'appUpdate.js', 'index.d.ts']) {
+    if (!existsSync(join(installed, 'packages/app-update/dist', file))) throw new Error(`packages/app-update/dist/${file} is not packed`);
+  }
+  standsAlone('packages/app-update/dist/index.js');
+  writeFileSync(
+    join(app, 'app-update.mjs'),
+    `
+import { TAKE_OVER_PATIENCE_MS, applyUpdate, getUpdateState, startAppUpdates } from 'pwa-kit/app-update';
+
+globalThis.document = { visibilityState: 'visible', addEventListener() {}, removeEventListener() {} };
+const posted = [];
+const waiting = { state: 'installed', postMessage: (m) => void posted.push(m), addEventListener() {} };
+let changed = () => {};
+const container = { controller: {}, addEventListener: (_t, l) => void (changed = l), removeEventListener() {} };
+const registration = { waiting, installing: null, update: async () => {}, addEventListener() {}, removeEventListener() {} };
+let reloads = 0;
+const updates = startAppUpdates({ container, registration, reload: () => void reloads++ });
+if (getUpdateState() !== 'ready' || typeof TAKE_OVER_PATIENCE_MS !== 'number') throw new Error('offer');
+applyUpdate();
+if (getUpdateState() !== 'updating' || posted[0]?.type !== 'SKIP_WAITING') throw new Error('apply');
+changed();
+changed();
+if (reloads !== 1) throw new Error('reload: ' + reloads);
+updates.stop();
+if (getUpdateState() !== 'none') throw new Error('stop');
+console.log('pwa-kit/app-update imports');
+`,
+  );
+  console.log(run('node', ['app-update.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);

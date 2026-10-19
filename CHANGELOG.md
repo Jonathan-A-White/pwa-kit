@@ -11,6 +11,17 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/tap](packages/tap/CHANGELOG.md)
 - [@pwa-kit/day](packages/day/CHANGELOG.md)
 - [@pwa-kit/launch-gate](packages/launch-gate/CHANGELOG.md)
+- [@pwa-kit/app-update](packages/app-update/CHANGELOG.md)
+
+## 0.6.0 (2026-10-18, not yet tagged)
+
+- New: `pwa-kit/app-update`: `startAppUpdates`, `applyUpdate`, `useUpdateState` and `getUpdateState`, the PWA update state
+  machine lifted from Postern 0.8.26 (mw-ti1qik.1). It looks for a new build on start, on return to the foreground and every
+  30 minutes, offers a waiting build, and after the tap reloads once when the new worker takes over, or anyway after 10 s.
+  An optional quiet take-over (`version`, `hasNewsSince`) takes a build with nothing new over without offering it. React is
+  its optional peer.
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0,
+  app-update 0.1.0.
 
 ## 0.5.0 (2026-10-16, not yet tagged)
 

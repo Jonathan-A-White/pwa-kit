@@ -23,12 +23,16 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
 - `@pwa-kit/launch-gate`: a launch gate that opens the app's store (`openWithin`, and the React `<LaunchGate>`) with a
   timeout: it says what it waits on after 3 s, offers Try again after 10 s, and at 15 s or on a throw says it failed with
   Try again. See [packages/launch-gate](packages/launch-gate/README.md).
+- `@pwa-kit/app-update`: the PWA update state machine (`startAppUpdates`, `applyUpdate`, the React hook `useUpdateState`): it looks for a
+  new build on start, on return to the foreground and every 30 minutes, offers a waiting build, and on the tap reloads once when the
+  new worker takes over, or anyway after 10 s. A build with nothing new in it can take over quietly instead. The banner stays in the
+  app. See [packages/app-update](packages/app-update/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
 kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
 service worker's registration. Each library imports nothing from the other; a test in each says so.
 
-What's new needs React 18 or later (`react`, `react-dom`) and alive, tap and launch-gate need `react` (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
+What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate and app-update need `react` (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
 is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them. day needs
 nothing; ESLint 9 is the optional peer of `pwa-kit/day/eslint` alone.
 
@@ -42,7 +46,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 and launch-gate with 0.5.0, so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -200,6 +204,28 @@ import { LaunchGate } from 'pwa-kit/launch-gate';
 
 Do not put a full-table scan in Dexie's `on('ready')`: `open()` waits for it. See [packages/launch-gate](packages/launch-gate/README.md).
 
+`pwa-kit/app-update`: the update banner's state, in the app, from its service worker registration.
+
+```tsx
+import { applyUpdate, startAppUpdates, useUpdateState } from 'pwa-kit/app-update';
+
+const registration = await navigator.serviceWorker.register('/sw.js');
+startAppUpdates(
+  { container: navigator.serviceWorker, registration, reload: () => location.reload() },
+  // optional: a build with nothing new for the person takes over quietly, never offered
+  { version: APP_VERSION, hasNewsSince: (version) => entriesSince(changelog, version).length > 0 },
+);
+
+function UpdateBanner() {
+  const update = useUpdateState(); // 'none' | 'ready' | 'updating'
+  if (update === 'none') return null;
+  return <button onClick={applyUpdate} disabled={update === 'updating'}>{update === 'updating' ? 'Updating…' : 'Update ready'}</button>;
+}
+// the service worker listens for {type:'SKIP_WAITING'} and calls self.skipWaiting()
+```
+
+See [packages/app-update](packages/app-update/README.md).
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -213,6 +239,7 @@ Do not put a full-table scan in Dexie's `on('ready')`: `open()` waits for it. Se
 | `pwa-kit/tap/testing` | `twoTaps`, `twoTapsAt` | a double tap for jsdom and Playwright tests |
 | `pwa-kit/day` | `localDay`, `dayStart`, `addDays`, `isDay`, `DayError` | the user's own calendar day as a `YYYY-MM-DD` key, never the UTC day |
 | `pwa-kit/day/eslint` | `plugin`, `config` (also the default export) | the ESLint rule `no-utc-day`, and a config object that turns it on |
+| `pwa-kit/app-update` | `startAppUpdates`, `applyUpdate`, `useUpdateState`, `getUpdateState`, `UPDATE_CHECK_EVERY_MS`, `TAKE_OVER_PATIENCE_MS` | the PWA update state machine: check, offer, apply with reload-anyway after 10 s (React) |
 | `pwa-kit/launch-gate` | `LaunchGate`, `openWithin`, `LaunchTimeout`, `DEFAULT_LAUNCH_WORDS` | a launch gate: opens the store with a timeout, says what it waits on, offers Try again (React) |
 
 ## Develop
