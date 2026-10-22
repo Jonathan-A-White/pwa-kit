@@ -1,0 +1,98 @@
+/* @pwa-kit/settings: the default look of the Settings home, the search box, the group buttons and the found rows. Every colour and size is a CSS
+   custom property read with a default (var(--bk-settings-accent, #2563eb)), so an app themes it by setting the properties on :root, on a parent or
+   on .bk-settings, or leaves this file out and styles the bk-settings__* classes itself. The surface and text default to Canvas and CanvasText,
+   which follow the page into dark and light. Import once: import '@pwa-kit/settings/styles.css' (pwa-kit/settings/styles.css). The properties
+   and their defaults:
+     --bk-settings-surface: Canvas
+     --bk-settings-fg: CanvasText
+     --bk-settings-muted: color-mix(in srgb, CanvasText 65%, transparent)
+     --bk-settings-line: color-mix(in srgb, CanvasText 15%, transparent)
+     --bk-settings-accent: #2563eb
+     --bk-settings-radius: 0.5rem
+     --bk-settings-target: 44px
+     --bk-settings-font-size: 1rem
+     --bk-settings-title-font-size: 1.125rem
+*/
+
+.bk-settings {
+  color: var(--bk-settings-fg, CanvasText);
+  font-size: var(--bk-settings-font-size, 1rem);
+}
+
+.bk-settings__searchbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0.75rem 0 0.5rem;
+  background: var(--bk-settings-surface, Canvas);
+}
+.bk-settings__search {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--bk-settings-target, 44px);
+  padding: 0 0.75rem;
+  border: 1px solid var(--bk-settings-line, color-mix(in srgb, CanvasText 15%, transparent));
+  border-radius: var(--bk-settings-radius, 0.5rem);
+  background: var(--bk-settings-surface, Canvas);
+  color: inherit;
+  font: inherit;
+}
+
+.bk-settings__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bk-settings__group,
+.bk-settings__found {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--bk-settings-target, 44px);
+  padding: 0.75rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--bk-settings-line, color-mix(in srgb, CanvasText 15%, transparent));
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.bk-settings__group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.bk-settings__found {
+  display: block;
+}
+
+.bk-settings__group-text {
+  flex: 1;
+  min-width: 0;
+}
+.bk-settings__group-title,
+.bk-settings__found-label {
+  display: block;
+  font-size: var(--bk-settings-title-font-size, 1.125rem);
+  font-weight: 600;
+}
+.bk-settings__group-hint,
+.bk-settings__found-hint {
+  display: block;
+  color: var(--bk-settings-muted, color-mix(in srgb, CanvasText 65%, transparent));
+}
+.bk-settings__found-where {
+  display: block;
+  color: var(--bk-settings-accent, #2563eb);
+}
+.bk-settings__chevron {
+  flex-shrink: 0;
+  color: var(--bk-settings-muted, color-mix(in srgb, CanvasText 65%, transparent));
+  font-size: 1.5rem;
+}
+
+.bk-settings__empty {
+  margin: 0;
+  padding: 1rem 0;
+  color: var(--bk-settings-muted, color-mix(in srgb, CanvasText 65%, transparent));
+}
