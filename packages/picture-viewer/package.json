@@ -1,0 +1,23 @@
+{
+  "name": "@pwa-kit/picture-viewer",
+  "version": "0.1.0",
+  "description": "pwa-kit: a picture shown full screen on the browser's top layer (PictureViewer, a <dialog> opened with showModal, so no z-index of the app covers it): pinch, drag, double tap, the wheel, Close, Escape and Back, and an optional Save. React.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**",
+    "!**/*.tsbuildinfo"
+  ],
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  }
+}
