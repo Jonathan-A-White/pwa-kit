@@ -1,0 +1,22 @@
+{
+  "name": "@pwa-kit/requests",
+  "version": "0.1.0",
+  "description": "pwa-kit: a request to the maker, filed by the tutor from a talk (never a form): the words and who asked, kept once a day, under a budget, with the asks an app expects listed for its settings and the status of each seen through a reader the app injects. Sending and storage are the app's. React.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**",
+    "!**/*.tsbuildinfo"
+  ],
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}
