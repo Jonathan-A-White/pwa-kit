@@ -127,7 +127,7 @@ describe('groups', () => {
 
   it('finds the group of a section; a home section is in none, and an unknown section throws', () => {
     expect(groupOf(GROUPS, 'text', home).id).toBe('display');
-    expect(() => groupOf(GROUPS, 'welcome', home)).toThrow(/home/);
+    expect(() => groupOf(GROUPS, 'welcome', home)).toThrow(/on the home/);
     expect(() => groupOf(GROUPS, 'nowhere' as never, home)).toThrow(/no group/);
   });
 
