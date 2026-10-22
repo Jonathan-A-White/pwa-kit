@@ -30,12 +30,16 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
 - `@pwa-kit/picture-viewer`: a picture shown full screen on the browser's top layer (`PictureViewer`, a `<dialog>` opened with
   `showModal()`, so no `z-index` of the app covers it): pinch, drag, double tap, Close, Escape and Back, and an optional Save.
   `usePictureViewer` wires Back for an app with none of its own. See [packages/picture-viewer](packages/picture-viewer/README.md).
+- `@pwa-kit/settings`: an app's settings declared once (`defineSetting`), a registry over storage the app injects that checks and applies
+  a change, one searched list of rows that hides a setting whose dependency is unmet and a group with nothing to show, and
+  `SettingsHome`, a search box and the groups. Sections, groups and storage are the app's, passed in. See
+  [packages/settings](packages/settings/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
 kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
 service worker's registration. Each library imports nothing from the other; a test in each says so.
 
-What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate, app-update and picture-viewer need `react` (picture-viewer `react-dom` too) (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
+What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate, app-update, picture-viewer and settings need `react` (picture-viewer `react-dom` too) (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
 is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them. day needs
 nothing; ESLint 9 is the optional peer of `pwa-kit/day/eslint` alone.
 
@@ -49,7 +53,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0) and picture-viewer with 0.8.0, so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0) picture-viewer with 0.8.0 and settings with 0.9.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -242,6 +246,24 @@ const { shown, open, close } = usePictureViewer(); // open() pushes a history en
 
 See [packages/picture-viewer](packages/picture-viewer/README.md).
 
+`pwa-kit/settings`: settings declared once, searched, and hidden when they do not apply; the sections, groups and storage are the app's.
+
+```tsx
+import { SettingsHome, createRegistry, createSettingsStore, defineSetting, entryOf, rowsInOrder, visibleRows } from 'pwa-kit/settings';
+import 'pwa-kit/settings/styles.css';
+
+const sync = defineSetting({ key: 'sync', default: 'off', section: 'sync', label: 'Sync', hint: 'Keep notes on every device.',
+  allowed: { kind: 'choice', values: [{ value: 'on', label: 'On' }, { value: 'off', label: 'Off' }] } }); // a default outside `allowed` throws
+const often = defineSetting({ key: 'often', default: 'on', section: 'sync', label: 'Often', hint: 'Every five minutes.',
+  allowed: sync.allowed, dependsOn: { key: 'sync', shown: (value) => value === 'on' } });
+const registry = createRegistry([sync, often].map((d) => entryOf(d, createSettingsStore({ read: (k) => localStorage.getItem(k) ?? undefined, write: (k, v) => localStorage.setItem(k, v) }))));
+const rows = rowsInOrder([{ id: 'sync', title: 'Sync' }], registry.entries);
+visibleRows(rows, { sync: 'off' }, ''); // Sync only: Often is hidden while Sync is off
+// <SettingsHome rows={rows} groups={groups} values={values} onOpenGroup={...} onOpenRow={...} />
+```
+
+See [packages/settings](packages/settings/README.md).
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -257,6 +279,8 @@ See [packages/picture-viewer](packages/picture-viewer/README.md).
 | `pwa-kit/day/eslint` | `plugin`, `config` (also the default export) | the ESLint rule `no-utc-day`, and a config object that turns it on |
 | `pwa-kit/app-update` | `startAppUpdates`, `applyUpdate`, `useUpdateState`, `getUpdateState`, `UPDATE_CHECK_EVERY_MS`, `TAKE_OVER_PATIENCE_MS` | the PWA update state machine: check, offer, apply with reload-anyway after 10 s (React) |
 | `pwa-kit/picture-viewer` | `PictureViewer`, `usePictureViewer`, `savePicture`, `pictureName`, `pinchScale`, `clampPan`, ... | a picture full screen on the top layer: pinch, drag, double tap, Close, Escape, optional Save (React) |
+| `pwa-kit/settings` | `defineSetting`, `createRegistry`, `createSettingsStore`, `entryOf`, `rowsInOrder`, `visibleRows`, `neededFor`, `rowsAt`, `visibleGroups`, `SettingsHome`, ... | settings declared once, searched, hidden when they do not apply, and a settings home (React) |
+| `pwa-kit/settings/styles.css` | | its default look |
 | `pwa-kit/launch-gate` | `LaunchGate`, `openWithin`, `LaunchTimeout`, `DEFAULT_LAUNCH_WORDS` | a launch gate: opens the store with a timeout, says what it waits on, offers Try again (React) |
 
 ## Develop
@@ -279,7 +303,7 @@ A source added or removed changes its credit in the same commit, and the credits
 `Kind:` (package, tool, service, idea, font or data); a package credit fails when that package is no longer in a package.json,
 and every bundled font or data file must be named in backticks by a font or data credit.
 
-Runtime libraries the app brings (peer dependencies of `@pwa-kit/whats-new` and `@pwa-kit/picture-viewer`):
+Runtime libraries the app brings (peer dependencies of `@pwa-kit/whats-new`, `@pwa-kit/picture-viewer` and `@pwa-kit/settings`):
 
 - [React](https://react.dev): `react` and `react-dom`, the UI library `@pwa-kit/whats-new` is written for (18 or later). Licence:
   [MIT](https://github.com/facebook/react/blob/main/LICENSE). No changes. Kind: package.

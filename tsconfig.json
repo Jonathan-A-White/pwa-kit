@@ -13,5 +13,5 @@
     }
   },
   "include": ["packages/*/src", "packages/*/tests", "vitest.config.ts", "eslint.config.js"],
-  "exclude": ["packages/whats-new", "packages/alive", "packages/tap", "packages/launch-gate", "packages/app-update", "packages/picture-viewer", "**/dist"]
+  "exclude": ["packages/whats-new", "packages/alive", "packages/tap", "packages/launch-gate", "packages/app-update", "packages/picture-viewer", "packages/settings", "**/dist"]
 }

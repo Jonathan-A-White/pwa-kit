@@ -1,6 +1,6 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the thirteen entry points (and package.json), nothing else;
+//   - the exports map names the fifteen entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
@@ -16,7 +16,9 @@
 //   - 'pwa-kit/app-update' offers a waiting build, takes it over on apply and reloads once, with the app's React; its import
 //     graph reaches no other pwa-kit library;
 //   - 'pwa-kit/picture-viewer' renders a <dialog> with Close, Save only when given, with the app's React and React DOM; its
-//     import graph reaches no other pwa-kit library.
+//     import graph reaches no other pwa-kit library;
+//   - 'pwa-kit/settings' defines a setting, hides a detail whose setting is off, finds a row by an accent-free search and
+//     renders the home with the app's React; its styles.css is packed and its import graph reaches no other pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -54,7 +56,7 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the thirteen entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the fifteen entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
   const expected = [
     './alive',
@@ -64,6 +66,8 @@ try {
     './launch-gate',
     './package.json',
     './picture-viewer',
+    './settings',
+    './settings/styles.css',
     './tap',
     './tap/testing',
     './test-preset',
@@ -72,7 +76,7 @@ try {
     './whats-new/styles.css',
   ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the thirteen entry points');
+  console.log('the exports map names the fifteen entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -322,6 +326,44 @@ console.log('pwa-kit/picture-viewer imports');
 `,
   );
   console.log(run('node', ['picture-viewer.mjs'], app).trim());
+  // 11. 'pwa-kit/settings' with the same React: a setting declared once, a row hidden while the setting it depends on is off and
+  // named by neededFor, a search that folds accents, the registry over an injected storage, and the home rendered with a search
+  // box and a group button; styles.css is packed.
+  for (const file of ['index.js', 'define.js', 'rows.js', 'registry.js', 'SettingsHome.js', 'styles.css', 'index.d.ts']) {
+    if (!existsSync(join(installed, 'packages/settings/dist', file))) throw new Error(`packages/settings/dist/${file} is not packed`);
+  }
+  standsAlone('packages/settings/dist/index.js');
+  writeFileSync(
+    join(app, 'settings.mjs'),
+    `
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import { SettingsHome, createRegistry, createSettingsStore, defineSetting, entryOf, neededFor, rowsInOrder, visibleRows } from 'pwa-kit/settings';
+
+const sections = [{ id: 'look', title: 'Look' }, { id: 'sync', title: 'Sync' }];
+const groups = [{ id: 'display', title: 'Display', hint: 'Theme.', sections: ['look'] }, { id: 'data', title: 'Your data', hint: 'Sync.', sections: ['sync'] }];
+const onOff = { kind: 'choice', values: [{ value: 'on', label: 'On' }, { value: 'off', label: 'Off' }] };
+const cafe = defineSetting({ key: 'cafe', default: 'off', allowed: onOff, section: 'look', label: 'Café mode', hint: 'Warmer colours.' });
+const sync = defineSetting({ key: 'sync', default: 'off', allowed: onOff, section: 'sync', label: 'Sync', hint: 'On every device.' });
+const often = defineSetting({ key: 'often', default: 'off', allowed: onOff, section: 'sync', label: 'How often', hint: 'Between syncs.', dependsOn: { key: 'sync', shown: (v) => v === 'on' } });
+let threw = false;
+try { defineSetting({ key: 'bad', default: 'maybe', allowed: onOff, section: 'look', label: 'Bad', hint: 'Bad.' }); } catch { threw = true; }
+if (!threw) throw new Error('a default outside Allowed was accepted');
+const rows = rowsInOrder(sections, [cafe, sync, often].map(({ key, label, hint, section, dependsOn }) => ({ key, label, hint, section, dependsOn })));
+const off = { sync: 'off' };
+if (visibleRows(rows, off, '').some((r) => r.key === 'often') || neededFor(rows, off, 'often')?.key !== 'sync') throw new Error('hide or neededFor');
+if (visibleRows(rows, { sync: 'on' }, 'CAFE').map((r) => r.key).join() !== 'cafe') throw new Error('search folds accents');
+const data = new Map();
+const store = createSettingsStore({ read: (k) => data.get(k), write: (k, v) => void data.set(k, v) });
+const registry = createRegistry([cafe, sync, often].map((d) => entryOf(d, store)));
+const { applied } = await registry.applyChanges([{ key: 'cafe', value: 'on' }, { key: 'cafe', value: 'purple' }]);
+if (applied.length !== 1 || data.get('cafe') !== 'on') throw new Error('registry');
+const html = renderToString(createElement(SettingsHome, { rows, groups, values: off, onOpenGroup() {}, onOpenRow() {} }));
+if (!html.includes('Search settings') || !html.includes('data-group="display"') || !html.includes('Your data')) throw new Error('settings html: ' + html);
+console.log('pwa-kit/settings imports');
+`,
+  );
+  console.log(run('node', ['settings.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);

@@ -13,6 +13,17 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/launch-gate](packages/launch-gate/CHANGELOG.md)
 - [@pwa-kit/app-update](packages/app-update/CHANGELOG.md)
 - [@pwa-kit/picture-viewer](packages/picture-viewer/CHANGELOG.md)
+- [@pwa-kit/settings](packages/settings/CHANGELOG.md)
+
+## 0.9.0 (2026-10-22, not yet tagged)
+
+- New: `pwa-kit/settings` (with `pwa-kit/settings/styles.css`): `defineSetting`, a registry over injected storage that checks and
+  applies a change, one searched list of rows that hides a setting whose dependency is unmet (`visibleRows`, `neededFor`,
+  `rowsAt`) and a group with nothing to show (`visibleGroups`), and a `SettingsHome` of groups and a search box, carved from
+  Lampas's Settings (mw-79en7t.6). The sections, groups, settings and storage are the app's, passed in as arguments. React is its
+  only peer. See [packages/settings](packages/settings/README.md).
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0,
+  app-update 0.2.0, picture-viewer 0.1.0, settings 0.1.0.
 
 ## 0.8.0 (2026-10-22, not yet tagged)
 
