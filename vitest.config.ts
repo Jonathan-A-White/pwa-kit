@@ -14,6 +14,7 @@ export default defineConfig({
       'pwa-kit/day': fileURLToPath(new URL('./packages/day/src/index.ts', import.meta.url)),
       'pwa-kit/launch-gate': fileURLToPath(new URL('./packages/launch-gate/src/index.ts', import.meta.url)),
       'pwa-kit/app-update': fileURLToPath(new URL('./packages/app-update/src/index.ts', import.meta.url)),
+      'pwa-kit/picture-viewer': fileURLToPath(new URL('./packages/picture-viewer/src/index.ts', import.meta.url)),
       'pwa-kit/alive': fileURLToPath(new URL('./packages/alive/src/index.ts', import.meta.url)),
       'pwa-kit/whats-new': fileURLToPath(new URL('./packages/whats-new/src/index.ts', import.meta.url)),
     },

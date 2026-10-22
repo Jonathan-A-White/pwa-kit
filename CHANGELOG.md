@@ -12,6 +12,17 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/day](packages/day/CHANGELOG.md)
 - [@pwa-kit/launch-gate](packages/launch-gate/CHANGELOG.md)
 - [@pwa-kit/app-update](packages/app-update/CHANGELOG.md)
+- [@pwa-kit/picture-viewer](packages/picture-viewer/CHANGELOG.md)
+
+## 0.8.0 (2026-10-22, not yet tagged)
+
+- New: `pwa-kit/picture-viewer`: `PictureViewer`, `usePictureViewer` and `savePicture`, Postern's full-screen picture viewer
+  (pinch, drag, double tap, Close, Escape, Back, optional Save) as a shared package, drawn on the browser's top layer
+  (`<dialog>` and `showModal()`) so no app screen covers it (mw-t49ebj.1). The viewer never touches history: an app wires Back
+  with `usePictureViewer`, or with its own Back stack (Lampas's `useSheetBack`); see the package README. React and React DOM
+  are its peers.
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0,
+  app-update 0.2.0, picture-viewer 0.1.0.
 
 ## 0.7.0 (2026-10-19, not yet tagged)
 

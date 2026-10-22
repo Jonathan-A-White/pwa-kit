@@ -1,6 +1,6 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the twelve entry points (and package.json), nothing else;
+//   - the exports map names the thirteen entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
@@ -14,7 +14,9 @@
 //   - 'pwa-kit/launch-gate' opens a store through openWithin and says Opening… with the app's React; its import graph
 //     reaches no other pwa-kit library;
 //   - 'pwa-kit/app-update' offers a waiting build, takes it over on apply and reloads once, with the app's React; its import
-//     graph reaches no other pwa-kit library.
+//     graph reaches no other pwa-kit library;
+//   - 'pwa-kit/picture-viewer' renders a <dialog> with Close, Save only when given, with the app's React and React DOM; its
+//     import graph reaches no other pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -52,7 +54,7 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the twelve entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the thirteen entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
   const expected = [
     './alive',
@@ -61,6 +63,7 @@ try {
     './day/eslint',
     './launch-gate',
     './package.json',
+    './picture-viewer',
     './tap',
     './tap/testing',
     './test-preset',
@@ -69,7 +72,7 @@ try {
     './whats-new/styles.css',
   ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the twelve entry points');
+  console.log('the exports map names the thirteen entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -292,6 +295,33 @@ console.log('pwa-kit/app-update imports');
 `,
   );
   console.log(run('node', ['app-update.mjs'], app).trim());
+
+  // 10. 'pwa-kit/picture-viewer' with the same React: the viewer is a <dialog> with a Close button, Save shows only when the
+  // app gives one (renderToString runs no effects, so showModal() is not called: the top layer is the browser's), and the
+  // zoom arithmetic and the save helper are there.
+  for (const file of ['index.js', 'PictureViewer.js', 'usePictureViewer.js', 'savePicture.js', 'zoom.js', 'index.d.ts']) {
+    if (!existsSync(join(installed, 'packages/picture-viewer/dist', file))) throw new Error(`packages/picture-viewer/dist/${file} is not packed`);
+  }
+  standsAlone('packages/picture-viewer/dist/index.js');
+  writeFileSync(
+    join(app, 'picture-viewer.mjs'),
+    `
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import { PictureViewer, pictureName, pinchScale, savePicture, usePictureViewer } from 'pwa-kit/picture-viewer';
+
+const plain = renderToString(createElement(PictureViewer, { src: 'blob:a', name: 'wall.png', onClose() {} }));
+if (!plain.includes('<dialog') || !plain.includes('Close picture') || !plain.includes('wall.png') || plain.includes('Save picture')) {
+  throw new Error('picture-viewer html: ' + plain);
+}
+const saving = renderToString(createElement(PictureViewer, { src: 'blob:a', onClose() {}, save: savePicture }));
+if (!saving.includes('Save picture')) throw new Error('picture-viewer save: ' + saving);
+if (pinchScale(1, 100, 300) !== 3 || pictureName(undefined, 'image/png', new Date(2026, 9, 10), 'app') !== 'app-2026-10-10.png') throw new Error('zoom or name');
+if (typeof usePictureViewer !== 'function') throw new Error('usePictureViewer');
+console.log('pwa-kit/picture-viewer imports');
+`,
+  );
+  console.log(run('node', ['picture-viewer.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);

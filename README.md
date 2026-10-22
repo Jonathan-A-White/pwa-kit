@@ -27,12 +27,15 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
   new build on start, on return to the foreground and every 30 minutes, offers a waiting build, and on the tap reloads once when the
   new worker takes over, or anyway after 10 s. A build with nothing new in it can take over quietly instead (judged now or later), and the page then reloads out of sight. The banner stays in the
   app. See [packages/app-update](packages/app-update/README.md).
+- `@pwa-kit/picture-viewer`: a picture shown full screen on the browser's top layer (`PictureViewer`, a `<dialog>` opened with
+  `showModal()`, so no `z-index` of the app covers it): pinch, drag, double tap, Close, Escape and Back, and an optional Save.
+  `usePictureViewer` wires Back for an app with none of its own. See [packages/picture-viewer](packages/picture-viewer/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
 kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
 service worker's registration. Each library imports nothing from the other; a test in each says so.
 
-What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate and app-update need `react` (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
+What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate, app-update and picture-viewer need `react` (picture-viewer `react-dom` too) (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
 is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them. day needs
 nothing; ESLint 9 is the optional peer of `pwa-kit/day/eslint` alone.
 
@@ -46,7 +49,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0), so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0) and picture-viewer with 0.8.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -226,6 +229,19 @@ function UpdateBanner() {
 
 See [packages/app-update](packages/app-update/README.md).
 
+`pwa-kit/picture-viewer`: a picture full screen, above every `z-index` the app has; Back is the app's.
+
+```tsx
+import { PictureViewer, savePicture, usePictureViewer } from 'pwa-kit/picture-viewer';
+
+const { shown, open, close } = usePictureViewer(); // open() pushes a history entry; Back (the phone's too) closes it
+// <img src={url} onClick={() => open({ src: url, name: 'wall.png' })} />
+{shown && <PictureViewer {...shown} onClose={close} save={savePicture} />} // no `save`, no Save button
+// An app with its own Back stack (Lampas's useSheetBack) calls that hook with the same onClose instead of usePictureViewer.
+```
+
+See [packages/picture-viewer](packages/picture-viewer/README.md).
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -240,6 +256,7 @@ See [packages/app-update](packages/app-update/README.md).
 | `pwa-kit/day` | `localDay`, `dayStart`, `addDays`, `isDay`, `DayError` | the user's own calendar day as a `YYYY-MM-DD` key, never the UTC day |
 | `pwa-kit/day/eslint` | `plugin`, `config` (also the default export) | the ESLint rule `no-utc-day`, and a config object that turns it on |
 | `pwa-kit/app-update` | `startAppUpdates`, `applyUpdate`, `useUpdateState`, `getUpdateState`, `UPDATE_CHECK_EVERY_MS`, `TAKE_OVER_PATIENCE_MS` | the PWA update state machine: check, offer, apply with reload-anyway after 10 s (React) |
+| `pwa-kit/picture-viewer` | `PictureViewer`, `usePictureViewer`, `savePicture`, `pictureName`, `pinchScale`, `clampPan`, ... | a picture full screen on the top layer: pinch, drag, double tap, Close, Escape, optional Save (React) |
 | `pwa-kit/launch-gate` | `LaunchGate`, `openWithin`, `LaunchTimeout`, `DEFAULT_LAUNCH_WORDS` | a launch gate: opens the store with a timeout, says what it waits on, offers Try again (React) |
 
 ## Develop
@@ -262,7 +279,7 @@ A source added or removed changes its credit in the same commit, and the credits
 `Kind:` (package, tool, service, idea, font or data); a package credit fails when that package is no longer in a package.json,
 and every bundled font or data file must be named in backticks by a font or data credit.
 
-Runtime libraries the app brings (peer dependencies of `@pwa-kit/whats-new` only):
+Runtime libraries the app brings (peer dependencies of `@pwa-kit/whats-new` and `@pwa-kit/picture-viewer`):
 
 - [React](https://react.dev): `react` and `react-dom`, the UI library `@pwa-kit/whats-new` is written for (18 or later). Licence:
   [MIT](https://github.com/facebook/react/blob/main/LICENSE). No changes. Kind: package.
