@@ -14,6 +14,18 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/app-update](packages/app-update/CHANGELOG.md)
 - [@pwa-kit/picture-viewer](packages/picture-viewer/CHANGELOG.md)
 - [@pwa-kit/settings](packages/settings/CHANGELOG.md)
+- [@pwa-kit/requests](packages/requests/CHANGELOG.md)
+
+## 0.10.0 (2026-10-22, not yet tagged)
+
+- New: `pwa-kit/requests`: `createRequests` with `fileFromTalk`, a request to the maker filed by the tutor from a talk (never a form):
+  the words and who asked, the same words twice in a day as one request, a budget per day that refuses with a reason; the expected
+  asks listed for the settings (`defineExpectedAsks`, `askRows`); the status of each seen through a reader the app injects
+  (`refresh`, `watchStatuses`); and `RequestsList`, grouped by who asked. Carved from Lampas's feedback and requests screen
+  (mw-79en7t.10). The sender, the store and the reader are the app's, passed in. React is its only peer. See
+  [packages/requests](packages/requests/README.md).
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0,
+  app-update 0.2.0, picture-viewer 0.1.0, settings 0.1.0, requests 0.1.0.
 
 ## 0.9.0 (2026-10-22, not yet tagged)
 

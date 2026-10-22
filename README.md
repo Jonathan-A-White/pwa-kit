@@ -34,12 +34,16 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
   a change, one searched list of rows that hides a setting whose dependency is unmet and a group with nothing to show, and
   `SettingsHome`, a search box and the groups. Sections, groups and storage are the app's, passed in. See
   [packages/settings](packages/settings/README.md).
+- `@pwa-kit/requests`: a request to the maker filed by the tutor from a talk, never a form (`createRequests`, `fileFromTalk`): the words
+  and who asked, the same words twice in a day as one request, a budget per day, the expected asks listed for the settings and the
+  status of each seen through a reader the app injects, and `RequestsList` grouped by who asked. Sending, storage and the reader are the
+  app's. See [packages/requests](packages/requests/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
 kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
 service worker's registration. Each library imports nothing from the other; a test in each says so.
 
-What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate, app-update, picture-viewer and settings need `react` (picture-viewer `react-dom` too) (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
+What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate, app-update, picture-viewer, settings and requests need `react` (picture-viewer `react-dom` too) (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
 is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them. day needs
 nothing; ESLint 9 is the optional peer of `pwa-kit/day/eslint` alone.
 
@@ -53,7 +57,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0) picture-viewer with 0.8.0 and settings with 0.9.0, so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0) picture-viewer with 0.8.0, settings with 0.9.0 and requests with 0.10.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -264,6 +268,22 @@ visibleRows(rows, { sync: 'off' }, ''); // Sync only: Often is hidden while Sync
 
 See [packages/settings](packages/settings/README.md).
 
+`pwa-kit/requests`: the tutor files a request from a talk; the kit keeps it once a day, under a budget, with who asked, and shows the status. The sender, the store and the reader are the app's.
+
+```tsx
+import { GROWN_UP, RequestsList, createJsonStore, createRequests } from 'pwa-kit/requests';
+
+const requests = createRequests({
+  appVersion: '1.4.0', perDay: 5, store: createJsonStore(localStorage),
+  send: async (request) => ({ id: await postToTheMaker(request) }), // your wire: answer the id a status will name
+});
+const result = await requests.fileFromTalk({ talkId: 'talk-12', words: 'I want a night mode', who: 'ruth', kind: 'setting' });
+// result.outcome: 'sent' | 'duplicate' (the same words today) | 'refused' (reason: 'budget', message to show)
+// <RequestsList records={await requests.list()} names={{ [GROWN_UP]: 'A grown-up', ruth: 'Ruth' }} />, grouped by who asked
+```
+
+See [packages/requests](packages/requests/README.md).
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -281,6 +301,7 @@ See [packages/settings](packages/settings/README.md).
 | `pwa-kit/picture-viewer` | `PictureViewer`, `usePictureViewer`, `savePicture`, `pictureName`, `pinchScale`, `clampPan`, ... | a picture full screen on the top layer: pinch, drag, double tap, Close, Escape, optional Save (React) |
 | `pwa-kit/settings` | `defineSetting`, `createRegistry`, `createSettingsStore`, `entryOf`, `rowsInOrder`, `visibleRows`, `neededFor`, `rowsAt`, `visibleGroups`, `SettingsHome`, ... | settings declared once, searched, hidden when they do not apply, and a settings home (React) |
 | `pwa-kit/settings/styles.css` | | its default look |
+| `pwa-kit/requests` | `createRequests`, `createJsonStore`, `defineExpectedAsks`, `askRows`, `watchStatuses`, `RequestsList`, `GROWN_UP`, ... | a request to the maker filed from a talk, once a day, under a budget, with who asked and the status seen (React) |
 | `pwa-kit/launch-gate` | `LaunchGate`, `openWithin`, `LaunchTimeout`, `DEFAULT_LAUNCH_WORDS` | a launch gate: opens the store with a timeout, says what it waits on, offers Try again (React) |
 
 ## Develop
@@ -303,7 +324,7 @@ A source added or removed changes its credit in the same commit, and the credits
 `Kind:` (package, tool, service, idea, font or data); a package credit fails when that package is no longer in a package.json,
 and every bundled font or data file must be named in backticks by a font or data credit.
 
-Runtime libraries the app brings (peer dependencies of `@pwa-kit/whats-new`, `@pwa-kit/picture-viewer` and `@pwa-kit/settings`):
+Runtime libraries the app brings (peer dependencies of `@pwa-kit/whats-new`, `@pwa-kit/picture-viewer`, `@pwa-kit/settings` and `@pwa-kit/requests`):
 
 - [React](https://react.dev): `react` and `react-dom`, the UI library `@pwa-kit/whats-new` is written for (18 or later). Licence:
   [MIT](https://github.com/facebook/react/blob/main/LICENSE). No changes. Kind: package.

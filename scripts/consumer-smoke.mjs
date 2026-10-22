@@ -1,6 +1,6 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the fifteen entry points (and package.json), nothing else;
+//   - the exports map names the sixteen entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
@@ -18,7 +18,10 @@
 //   - 'pwa-kit/picture-viewer' renders a <dialog> with Close, Save only when given, with the app's React and React DOM; its
 //     import graph reaches no other pwa-kit library;
 //   - 'pwa-kit/settings' defines a setting, hides a detail whose setting is off, finds a row by an accent-free search and
-//     renders the home with the app's React; its styles.css is packed and its import graph reaches no other pwa-kit library.
+//     renders the home with the app's React; its styles.css is packed and its import graph reaches no other pwa-kit library;
+//   - 'pwa-kit/requests' files a request from a talk once a day, refuses past its budget, lists the expected asks as rows, takes a
+//     status through a reader and renders the list grouped by who asked with the app's React; its import graph reaches no other
+//     pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -56,7 +59,7 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the fifteen entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the sixteen entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
   const expected = [
     './alive',
@@ -66,6 +69,7 @@ try {
     './launch-gate',
     './package.json',
     './picture-viewer',
+    './requests',
     './settings',
     './settings/styles.css',
     './tap',
@@ -76,7 +80,7 @@ try {
     './whats-new/styles.css',
   ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the fifteen entry points');
+  console.log('the exports map names the sixteen entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -364,6 +368,42 @@ console.log('pwa-kit/settings imports');
 `,
   );
   console.log(run('node', ['settings.mjs'], app).trim());
+  // 12. 'pwa-kit/requests' with the same React: a request filed from a talk and sent once, the same words again kept as one, the budget
+  // refusing with a reason, the expected asks as rows, a status taken through the reader, and the list grouped by who asked.
+  for (const file of ['index.js', 'request.js', 'expected.js', 'status.js', 'budget.js', 'RequestsList.js', 'index.d.ts']) {
+    if (!existsSync(join(installed, 'packages/requests/dist', file))) throw new Error(`packages/requests/dist/${file} is not packed`);
+  }
+  standsAlone('packages/requests/dist/index.js');
+  writeFileSync(
+    join(app, 'requests.mjs'),
+    `
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import { GROWN_UP, RequestsList, askRows, createRequests, defineExpectedAsks } from 'pwa-kit/requests';
+
+const rows = [];
+const store = { all: () => rows, put(r) { const i = rows.findIndex((x) => x.id === r.id); if (i >= 0) rows[i] = r; else rows.push(r); } };
+let sent = 0;
+const send = async () => ({ id: 'direct:' + ++sent });
+const reader = async (open) => open.map((r) => ({ request: r.id, status: 'filed', ts: 10 }));
+const requests = createRequests({ send, store, appVersion: '1.0.0', perDay: 2, readStatuses: reader });
+const ask = (words, who) => ({ talkId: 't1', words, who, kind: 'tutor-ask', askId: 'night' });
+const first = await requests.fileFromTalk(ask('A night mode', 'ruth'));
+const again = await requests.fileFromTalk(ask('a night  mode', 'ruth'));
+if (first.outcome !== 'sent' || again.outcome !== 'duplicate' || sent !== 1) throw new Error('filing: ' + first.outcome + ' ' + again.outcome);
+await requests.fileFromTalk(ask('Bigger text', GROWN_UP));
+const refused = await requests.fileFromTalk(ask('Another thing', GROWN_UP));
+if (refused.outcome !== 'refused' || refused.reason !== 'budget' || !refused.message) throw new Error('budget: ' + JSON.stringify(refused));
+if ((await requests.refresh()).changed !== 2) throw new Error('status');
+const list = await requests.list();
+const asks = askRows(defineExpectedAsks([{ id: 'night', title: 'A night mode', kind: 'tutor-ask' }, { id: 'other', title: 'Something else', kind: 'tutor-ask' }]), list);
+if (!asks[0].asked || asks[0].status !== 'filed' || asks[1].asked) throw new Error('rows: ' + JSON.stringify(asks));
+const html = renderToString(createElement(RequestsList, { records: list, names: { ruth: 'Ruth' } }));
+if (!html.includes('data-who="ruth"') || !html.includes('data-who="grown-up"') || !html.includes('Ruth') || !html.includes('Filed')) throw new Error('requests html: ' + html);
+console.log('pwa-kit/requests imports');
+`,
+  );
+  console.log(run('node', ['requests.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);
