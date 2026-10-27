@@ -18,10 +18,24 @@ What it does:
    with `expectedAsksFromJson`) so the settings can show a row for each (`askRows`): its title, what a talk about it opens with,
    and where the latest request for it stands.
 4. **The status** is seen through a **reader you inject**: `refresh()` gives it the requests still open and keeps the updates it
-   returns (`filed`, `building`, `landed`, `declined`, `adopted-as-setting`; the newest by time wins). `watchStatuses(refresh)`
+   returns (`filed`, `building`, `landed`, `declined`, `adopted-as-setting`, `built-differently`, `moved`; the newest by time wins). `watchStatuses(refresh)`
    asks now, every 20 s, and when the page is shown again; never while it is hidden.
 5. **`RequestsList`** draws the requests, a group for each person, each with where it stands (Sent, Filed, Being built, Adopted in
-   2.0.0 as a link to the change, Declined: why, Now a setting: name).
+   2.0.0 as a link to the change, Declined: why, Now a setting: name, Built another way: note, Now part of: title).
+
+| Status | Final | Means | Fields it carries | Drawn as |
+| --- | --- | --- | --- | --- |
+| `sent` | no | the maker's side has the request | | Sent |
+| `filed` | no | it is on the maker's list | `bead` | Filed |
+| `building` | no | it is being built | `bead` | Being built |
+| `landed` | yes | it came in | `bead`, `version`, `commit`, `url` | Adopted in 2.0.0 (a link when `url` is a web link) |
+| `declined` | yes | the answer is no | `reason` | Declined: why |
+| `adopted-as-setting` | yes | it became a setting | `setting` | Now a setting: name |
+| `built-differently` | yes | the ask was answered another way than the request said | `reason` (the note), `bead`, `version`, `commit`, `url` | Built another way: note, in 2.0.0 when it has one |
+| `moved` | no | the request now follows another story | `bead` (the new story), `reason` (its title) | Now part of: title |
+
+A reader lands before the writer: an app's reader drops a status it does not know and the maker's side sends each status once, so
+update the kit and the app's reader to pass `built-differently` and `moved` through before the maker's side sends them.
 
 ## Install
 

@@ -2,6 +2,15 @@
 
 Newest first. Breaking changes come first in a release, each with its migration in one sentence.
 
+## 0.2.0 (2026-10-26)
+
+- New: two request statuses in the vocabulary (`REQUEST_STATUSES`, `StatusUpdate`, `moved()`, `statusLine`, `RequestsList`):
+  `built-differently` (final; `reason` is the one-sentence note, `bead` the story that did it, `version`, `commit` and `url` when it
+  landed; "Built another way: <note>", with " in <version>" when it has one, a link when it has a web url) and `moved` (not final;
+  `bead` is the new story and `reason` its title; "Now part of: <title>", or "Now part of another story" with no title). Order of
+  landing: the kit, then the app's reader, then the factory's writer last, because an app's reader drops a status it does not know
+  and the factory sends each status once (mw-5r3p30.797).
+
 ## 0.1.0 (2026-10-22)
 
 - New: `createRequests` (`fileFromTalk`, `list`, `budget`, `refresh`), the expected asks (`defineExpectedAsks`, `askRows`, JSON in and

@@ -16,6 +16,15 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/settings](packages/settings/CHANGELOG.md)
 - [@pwa-kit/requests](packages/requests/CHANGELOG.md)
 
+## 0.11.0 (2026-10-26, not yet tagged)
+
+- New: `pwa-kit/requests` knows two more statuses, `built-differently` (final: the factory answered the ask another way; drawn as
+  "Built another way: <note>", with " in <version>" when it landed) and `moved` (not final: the request now follows another
+  story; drawn as "Now part of: <title>"). Readers land before the factory sends them: update the app's reader to pass both
+  through before the writer starts to send them, since a reader that does not know a status drops it (mw-5r3p30.797).
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0,
+  app-update 0.2.0, picture-viewer 0.1.0, settings 0.1.0, requests 0.2.0.
+
 ## 0.10.0 (2026-10-22, not yet tagged)
 
 - New: `pwa-kit/requests`: `createRequests` with `fileFromTalk`, a request to the maker filed by the tutor from a talk (never a form):
