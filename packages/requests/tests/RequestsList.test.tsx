@@ -61,6 +61,21 @@ describe('<RequestsList>', () => {
     expect(screen.getByText('Adopted in 2.0.1').closest('a')).toBeNull();
   });
 
+  it('draws a row for built-differently and for moved', () => {
+    render(
+      <RequestsList
+        records={[
+          record('a', 'ruth', 1, { status: 'built-differently', reason: 'A setting row did it', version: '2.1.0', url: 'https://example.com/c/2' }),
+          record('b', 'ruth', 2, { status: 'moved', reason: 'Night mode', bead: 'mw-10' }),
+          record('c', 'ruth', 3, { status: 'moved' }),
+        ]}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'Built another way: A setting row did it in 2.1.0' }).getAttribute('href')).toBe('https://example.com/c/2');
+    expect(screen.getByText('Now part of: Night mode')).toBeTruthy();
+    expect(screen.getByText('Now part of another story')).toBeTruthy();
+  });
+
   it('shows the tutor\'s summary, or the words when there is none', () => {
     render(<RequestsList records={[record('a', 'ruth', 1), record('b', 'ruth', 2, { summary: '' })]} />);
     expect(screen.getByText('summary of a')).toBeTruthy();

@@ -36,7 +36,7 @@ const sentOn = (ms: number): string => new Date(ms).toLocaleDateString(undefined
 
 function Request({ record, kinds }: { record: RequestRecord; kinds: Readonly<Record<string, string>> }) {
   const line = statusLine(record);
-  const link = record.status === 'landed' ? webLink(record.url) : undefined;
+  const link = record.status === 'landed' || record.status === 'built-differently' ? webLink(record.url) : undefined;
   return (
     <li data-request={record.id} className="bk-requests__request">
       <p className="bk-requests__what">{record.summary || record.words}</p>

@@ -1,11 +1,11 @@
 // The status of a request after it was sent, seen through a reader the app injects, and a loop that asks for it now and then.
 
 /** Where a request stands. 'sent' is the first, kept when the maker's side has the request; the rest come back from the reader. */
-export const REQUEST_STATUSES = ['sent', 'filed', 'building', 'landed', 'declined', 'adopted-as-setting'] as const;
+export const REQUEST_STATUSES = ['sent', 'filed', 'building', 'landed', 'declined', 'adopted-as-setting', 'built-differently', 'moved'] as const;
 export type RequestStatus = (typeof REQUEST_STATUSES)[number];
 
-/** The statuses nothing follows: a request that reached one is not asked about again. */
-export const FINAL_STATUSES: readonly RequestStatus[] = ['landed', 'declined', 'adopted-as-setting'];
+/** The statuses nothing follows: a request that reached one is not asked about again. 'moved' is not one: the request now follows another story. */
+export const FINAL_STATUSES: readonly RequestStatus[] = ['landed', 'declined', 'adopted-as-setting', 'built-differently'];
 
 /** A request kept: what was asked, who asked, and where it stands. */
 export interface RequestRecord {
@@ -30,11 +30,11 @@ export interface RequestRecord {
   /** When the maker's side set the status, a number the reader gives; a newer one replaces an older. */
   statusAt?: number;
   bead?: string;
-  /** landed: the version it came in, and where to read the change. */
+  /** landed, built-differently: the version it came in, and where to read the change. */
   version?: string;
   commit?: string;
   url?: string;
-  /** declined: why. */
+  /** declined: why. built-differently: the one-sentence note on how it was answered. moved: the title of the story it now follows (bead is that story). */
   reason?: string;
   /** adopted-as-setting: the setting's name. */
   setting?: string;
@@ -75,12 +75,12 @@ export function moved(record: RequestRecord, update: StatusUpdate): RequestRecor
   };
   if (record.askId !== undefined) next.askId = record.askId;
   if (update.bead !== undefined) next.bead = update.bead;
-  if (update.status === 'landed') {
+  if (update.status === 'landed' || update.status === 'built-differently') {
     if (update.version !== undefined) next.version = update.version;
     if (update.commit !== undefined) next.commit = update.commit;
     if (update.url !== undefined) next.url = update.url;
   }
-  if (update.status === 'declined' && update.reason !== undefined) next.reason = update.reason;
+  if ((update.status === 'declined' || update.status === 'built-differently' || update.status === 'moved') && update.reason !== undefined) next.reason = update.reason;
   if (update.status === 'adopted-as-setting' && update.setting !== undefined) next.setting = update.setting;
   return next;
 }
@@ -112,6 +112,12 @@ export function statusLine(record: RequestRecord): string {
       return record.reason ? `Declined: ${record.reason}` : 'Declined';
     case 'adopted-as-setting':
       return record.setting ? `Now a setting: ${record.setting}` : 'Now a setting';
+    case 'built-differently': {
+      const note = record.reason ? `Built another way: ${record.reason}` : 'Built another way';
+      return record.version ? `${note} in ${record.version}` : note;
+    }
+    case 'moved':
+      return record.reason ? `Now part of: ${record.reason}` : 'Now part of another story';
     default:
       return 'Sent';
   }
