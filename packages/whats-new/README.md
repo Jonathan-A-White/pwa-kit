@@ -6,6 +6,15 @@ Settings or About, a **Check for updates** button, and the **link** from the ver
 It needs React 18 or later (`react` and `react-dom`, peer dependencies) and imports nothing from tips or any other
 library. It keeps one string in the page's `localStorage`, under a key the app names, and nothing else.
 
+<!-- toc -->
+
+- [Install](#install)
+- [changelog.json](#changelogjson)
+- [What the app passes](#what-the-app-passes)
+- [The look](#the-look)
+
+<!-- /toc -->
+
 ## Install
 
 From GitHub, by pinned commit; the repo's [README](../../README.md#install) has the full SHA to pin and the npm 11 `allowScripts` note.

@@ -17,6 +17,16 @@ What it does:
 - Focus goes to Close when it opens and back to what opened it when it goes; the rest of the page is inert while it is open.
 - A browser without `showModal` still shows the dialog (open, but not on the top layer).
 
+<!-- toc -->
+
+- [Install](#install)
+- [Use](#use)
+- [Back](#back)
+- [The top layer, and how it is tested](#the-top-layer-and-how-it-is-tested)
+- [Exports](#exports)
+
+<!-- /toc -->
+
 ## Install
 
 From GitHub, by pinned commit (there is no registry; `prepare` builds the libraries on install). The repo's

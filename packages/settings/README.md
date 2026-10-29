@@ -20,6 +20,18 @@ What it does:
 4. **`SettingsHome`** is the home screen: a search box and a button for each group that has something to show; typing swaps the groups
    for the rows that match, each saying which group it is in. Tap targets are 44 px at least. Navigation is yours: it calls back.
 
+<!-- toc -->
+
+- [Install](#install)
+- [Use](#use)
+- [The pieces](#the-pieces)
+  - [The search](#the-search)
+  - [What the app owns](#what-the-app-owns)
+  - [Style](#style)
+- [Develop](#develop)
+
+<!-- /toc -->
+
 ## Install
 
 From GitHub, by pinned commit (there is no registry; `prepare` builds the libraries on install). The repo's

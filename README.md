@@ -47,6 +47,17 @@ What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch
 is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them. day needs
 nothing; ESLint 9 is the optional peer of `pwa-kit/day/eslint` alone.
 
+<!-- toc -->
+
+- [Install](#install)
+  - [Moving from bsv-kit](#moving-from-bsv-kit)
+- [Examples](#examples)
+- [Modules](#modules)
+- [Develop](#develop)
+- [Credits](#credits)
+
+<!-- /toc -->
+
 ## Install
 
 From GitHub, by full commit SHA (there is no registry and no tag yet); `prepare` builds the libraries on install. An app

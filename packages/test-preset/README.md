@@ -4,6 +4,16 @@ The timeouts a vitest or Playwright config takes so a test run survives a loaded
 watch a real clock, and `settleAfterTeardown`. Plain data and functions: it imports nothing (vitest, Playwright and
 testing-library are never imported; the app passes what it has), and it has no dependency.
 
+<!-- toc -->
+
+- [Install](#install)
+- [Use](#use)
+- [The numbers](#the-numbers)
+- [MW_TIMING: the timing tests](#mw_timing-the-timing-tests)
+- [settleAfterTeardown](#settleafterteardown)
+
+<!-- /toc -->
+
 ## Install
 
 From GitHub, by pinned commit (there is no registry; `prepare` builds the libraries on install). The repo's

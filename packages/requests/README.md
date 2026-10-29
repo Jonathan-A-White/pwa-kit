@@ -37,6 +37,16 @@ What it does:
 A reader lands before the writer: an app's reader drops a status it does not know and the maker's side sends each status once, so
 update the kit and the app's reader to pass `built-differently` and `moved` through before the maker's side sends them.
 
+<!-- toc -->
+
+- [Install](#install)
+- [Use](#use)
+- [The pieces](#the-pieces)
+  - [What the app owns](#what-the-app-owns)
+- [Develop](#develop)
+
+<!-- /toc -->
+
 ## Install
 
 From GitHub, by pinned commit (there is no registry; `prepare` builds the libraries on install). The repo's

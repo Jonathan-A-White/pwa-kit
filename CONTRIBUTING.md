@@ -4,6 +4,16 @@ pwa-kit is small TypeScript libraries for what an installed web app shows about 
 tips, lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit)) and for testing such an app (timeouts for a loaded host,
 a guard for a setState after an await, a shared tap guard, a launch gate that opens the app's store with a timeout) and for keeping the user's own calendar day, not the UTC day. It is MIT licensed. A change is welcome when it is small, has its test, and leaves the gate green.
 
+<!-- toc -->
+
+- [Build and test](#build-and-test)
+- [Layout](#layout)
+- [Proposing a change](#proposing-a-change)
+- [What a change must bring](#what-a-change-must-bring)
+- [Releases](#releases)
+
+<!-- /toc -->
+
 ## Build and test
 
 Node 20 or later. From a clone:
