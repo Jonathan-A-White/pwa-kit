@@ -1,6 +1,6 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the seventeen entry points (and package.json), nothing else;
+//   - the exports map names the eighteen entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
@@ -23,7 +23,10 @@
 //     status through a reader and renders the list grouped by who asked with the app's React; its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/push' subscribes through a fake push manager and a fake signer, posts the subscription once, reads on, says the
-//     one plain line for a denied permission and unsubscribes; its import graph reaches no other pwa-kit library.
+//     one plain line for a denied permission and unsubscribes; its import graph reaches no other pwa-kit library;
+//   - 'pwa-kit/outbox' queues a write in a table first, sends it once the page is online with its client id, tries a failed send again
+//     with the same client id, keeps a refused one as failed with its reason and says the status words; its import graph reaches no other
+//     pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -61,7 +64,7 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the seventeen entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the eighteen entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
   const expected = [
     './alive',
@@ -69,6 +72,7 @@ try {
     './day',
     './day/eslint',
     './launch-gate',
+    './outbox',
     './package.json',
     './picture-viewer',
     './push',
@@ -83,7 +87,7 @@ try {
     './whats-new/styles.css',
   ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the seventeen entry points');
+  console.log('the exports map names the eighteen entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -439,6 +443,59 @@ console.log('pwa-kit/push imports');
 `,
   );
   console.log(run('node', ['push.mjs'], app).trim());
+  // 14. 'pwa-kit/outbox' with a table held in a Map, a fake page and a fake sender: queued offline and written first, sent when the page is
+  // online with its client id, a failed try tried again with the same id after the wait, a refused one kept failed with its reason.
+  for (const file of ['index.js', 'outbox.js', 'status.js', 'page.js', 'index.d.ts']) {
+    if (!existsSync(join(installed, 'packages/outbox/dist', file))) throw new Error(`packages/outbox/dist/${file} is not packed`);
+  }
+  standsAlone('packages/outbox/dist/index.js');
+  writeFileSync(
+    join(app, 'outbox.mjs'),
+    `
+import { PermanentSendError, createOutbox } from 'pwa-kit/outbox';
+
+const rows = new Map();
+const table = {
+  get: async (id) => rows.get(id),
+  add: async (item) => void rows.set(item.clientId, item),
+  put: async (item) => void rows.set(item.clientId, item),
+  delete: async (id) => void rows.delete(id),
+  toArray: async () => [...rows.values()],
+};
+let online = false;
+const wakes = new Set();
+const page = { isOnline: () => online, isVisible: () => true, subscribe: (w) => (wakes.add(w), () => wakes.delete(w)) };
+const tries = [];
+const lines = [];
+const outbox = createOutbox({
+  table,
+  page,
+  backoff: { baseMs: 20, maxMs: 40 },
+  sender: async (item) => {
+    tries.push(item.clientId + ':' + item.payload);
+    if (item.payload === 'flaky' && tries.length === 1) throw new Error('Gateway down');
+    if (item.payload === 'bad') throw new PermanentSendError('Too long.');
+  },
+  onStatus: (status) => void lines.push(status.line),
+});
+const stop = outbox.start();
+await outbox.enqueue('flaky', { clientId: 'one' });
+if (rows.get('one')?.stage !== 'waiting' || (await outbox.status()).line !== 'Waiting for the network') throw new Error('queued: ' + JSON.stringify([...rows.values()]));
+online = true;
+wakes.forEach((w) => w());
+await new Promise((r) => setTimeout(r, 200));
+await outbox.settled();
+if (tries.join() !== 'one:flaky,one:flaky' || rows.get('one')?.stage !== 'sent') throw new Error('retry: ' + tries.join() + ' ' + JSON.stringify([...rows.values()]));
+await outbox.enqueue('bad', { clientId: 'two' });
+await outbox.settled();
+const status = await outbox.status();
+if (rows.get('two')?.stage !== 'failed' || status.line !== 'Could not send: Too long.') throw new Error('failed: ' + JSON.stringify(status));
+if (!lines.includes('Sent') || !lines.includes('Waiting for the network')) throw new Error('lines: ' + lines.join('|'));
+stop();
+console.log('pwa-kit/outbox imports');
+`,
+  );
+  console.log(run('node', ['outbox.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);

@@ -42,12 +42,16 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
   subscription posted to the backend once through a signer the app injects (bsv-kit's `Door` fits), a denied permission or an
   unsupported phone as a status with its one plain line. The backend, the key and the service worker are the app's. No dependencies. See
   [packages/push](packages/push/README.md).
+- `@pwa-kit/outbox`: every write queued in the app's Dexie table first (`createOutbox`: `enqueue()`, `start()`, `retry()`, `discard()`), sent one at a
+  time with a timeout and a growing retry wait (1 s to 5 min), a client id per write so a retry never doubles, only while the page is
+  online and visible, and an honest status line for the screen (`Waiting for the network`, `Sent`, `Could not send: <reason>`). The
+  sender is the app's, and must be idempotent on the client id. No dependencies. See [packages/outbox](packages/outbox/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
-kept through storage the app hands in. Nothing here needs a key or a server of its own (push takes the app's signer), or a browser API beyond `localStorage`, the push manager and the
-service worker's registration. Each library imports nothing from the other; a test in each says so.
+kept through storage the app hands in. Nothing here needs a key or a server of its own (push takes the app's signer, outbox the app's sender), or a browser API beyond `localStorage`, the push manager, the
+service worker's registration and, for outbox, the app's own Dexie table. Each library imports nothing from the other; a test in each says so.
 
-What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate, app-update, picture-viewer, settings and requests need `react` (picture-viewer `react-dom` too) (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips, test-preset and push need none. React
+What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate, app-update, picture-viewer, settings and requests need `react` (picture-viewer `react-dom` too) (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips, test-preset, push and outbox need none. React
 is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them. day needs
 nothing; ESLint 9 is the optional peer of `pwa-kit/day/eslint` alone.
 
@@ -72,7 +76,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0) picture-viewer with 0.8.0, settings with 0.9.0 (the connection kind and `link` with 0.12.0), requests with 0.10.0 (the statuses built-differently and moved with 0.11.0), push with 0.13.0, so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0) picture-viewer with 0.8.0, settings with 0.9.0 (the connection kind and `link` with 0.12.0), requests with 0.10.0 (the statuses built-differently and moved with 0.11.0), push with 0.13.0, outbox with 0.14.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -315,6 +319,27 @@ await push.unsubscribe(); // cancels the subscription and posts the removal
 
 On an iPhone it works only for an app on the Home Screen (iOS 16.4 or later). See [packages/push](packages/push/README.md).
 
+`pwa-kit/outbox`: every write goes into the app's Dexie table first and the caller goes on; the sender is the app's and must be idempotent on the client id.
+
+```ts
+import { PermanentSendError, createOutbox } from 'pwa-kit/outbox';
+
+db.version(1).stores({ outbox: 'clientId, queuedAt' }); // keyed by clientId
+const outbox = createOutbox<{ text: string }>({
+  table: db.table('outbox'),
+  sender: async (item, { signal }) => { // may be called again for the same item.clientId: send it along so the backend stores a repeat once
+    const res = await fetch('/api/notes', { method: 'POST', signal, body: JSON.stringify({ id: item.clientId, ...item.payload }) });
+    if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) throw new PermanentSendError(`The server said ${res.status}.`);
+    if (!res.ok) throw new Error(`The server said ${res.status}.`);
+  },
+  onStatus: (status) => (label.textContent = status.line), // 'Waiting for the network' | 'Sending' | 'Sent' | 'Could not send: <reason>' | ''
+});
+outbox.start();                                   // sends what waits, now and whenever the page is online and visible
+await outbox.enqueue({ text: 'milk' });            // resolves once it is in the table, not once it is sent
+```
+
+See [packages/outbox](packages/outbox/README.md).
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -334,6 +359,7 @@ On an iPhone it works only for an app on the Home Screen (iOS 16.4 or later). Se
 | `pwa-kit/settings/styles.css` | | its default look |
 | `pwa-kit/requests` | `createRequests`, `createJsonStore`, `defineExpectedAsks`, `askRows`, `watchStatuses`, `RequestsList`, `GROWN_UP`, ... | a request to the maker filed from a talk, once a day, under a budget, with who asked and the status seen (React) |
 | `pwa-kit/push` | `createPush`, `DEFAULT_WORDS`, `PushError`, `urlBase64ToBytes` | Notify me on a phone: permission in plain words, the subscription posted through the app's signer, unsubscribe |
+| `pwa-kit/outbox` | `createOutbox`, `PermanentSendError`, `SendTimeoutError`, `browserPage`, `itemStatus`, `queueStatus`, `DEFAULT_WORDS`, `backoffMs` | a write queued in the app's Dexie table first, sent with a timeout and retry, a client id per write, an honest status line |
 | `pwa-kit/launch-gate` | `LaunchGate`, `openWithin`, `LaunchTimeout`, `DEFAULT_LAUNCH_WORDS` | a launch gate: opens the store with a timeout, says what it waits on, offers Try again (React) |
 
 ## Develop

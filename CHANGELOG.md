@@ -16,6 +16,19 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/settings](packages/settings/CHANGELOG.md)
 - [@pwa-kit/requests](packages/requests/CHANGELOG.md)
 - [@pwa-kit/push](packages/push/CHANGELOG.md)
+- [@pwa-kit/outbox](packages/outbox/CHANGELOG.md)
+
+## 0.14.0 (2026-10-30, not yet tagged)
+
+- New: `pwa-kit/outbox`: `createOutbox` with `enqueue()`, `start()`, `retry()`, `discard()` and `status()`, lifted from Postern's outbox
+  and Trade Tracker's lookup runner (mw-mr4xgrw.8). Every write is put in the app's Dexie table first and the caller goes on; one sender
+  takes the waiting items in order, one at a time, each with a timeout, and tries a failed one again after 1 s, doubling to 5 min. A
+  client id is made when the write is queued and goes with every try, so the app's sender (which must be idempotent on it) stores a
+  retried write once; a sent item is not sent again after a reload. It sends only while the page is online and visible, and gives the
+  screen an honest line (`Waiting for the network`, `Sending`, `Sent`, `Could not send: <reason>`). The Dexie table, the sender and the
+  words are the app's, passed in. No dependencies. See [packages/outbox](packages/outbox/README.md).
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0,
+  app-update 0.2.0, picture-viewer 0.1.0, settings 0.2.0, requests 0.2.0, push 0.1.0, outbox 0.1.0.
 
 ## 0.13.0 (2026-10-30, not yet tagged)
 
