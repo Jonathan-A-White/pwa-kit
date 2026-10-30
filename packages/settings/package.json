@@ -1,6 +1,6 @@
 {
   "name": "@pwa-kit/settings",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "pwa-kit: settings for a React PWA, declared once (defineSetting), a registry that checks and applies a change over injected storage, one searched list of rows that hides what does not apply (a detail whose setting is off, a group with nothing to show) and a SettingsHome of groups and a search box. Sections, groups and storage are the app's, passed in as arguments. React.",
   "license": "MIT",
   "type": "module",

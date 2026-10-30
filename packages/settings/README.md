@@ -19,11 +19,15 @@ What it does:
    in words (by an assistant, say) against what each setting allows: `applyChanges`, `offeredChange`, `undoChange`, `currentSettings`.
 4. **`SettingsHome`** is the home screen: a search box and a button for each group that has something to show; typing swaps the groups
    for the rows that match, each saying which group it is in. Tap targets are 44 px at least. Navigation is yours: it calls back.
+5. **Connections** (`createConnections`) are a service the app can talk to behind one switch that is **Off for a stranger**; **while it is
+   Off, no screen draws anything of it**. `useConnectionOn(key)` says whether to draw, and `link(key)` is the route to any setting's row.
 
 <!-- toc -->
 
 - [Install](#install)
 - [Use](#use)
+- [Connections](#connections)
+- [Links](#links)
 - [The pieces](#the-pieces)
   - [The search](#the-search)
   - [What the app owns](#what-the-app-owns)
@@ -93,6 +97,43 @@ export function Home({ values, openGroup, openRow }: { values: Record<string, st
 `values` is what `readValues` would be in your app: read the settings some other row depends on (`await store.get(sync)`), as text.
 A row whose value is not given is a dependency not met.
 
+## Connections
+
+A connection is a setting of kind connection: a service (a bank, a library, a sync server) the app can reach, kept behind **one switch** that is
+**Off until the person turns it on**. The rule: **while it is Off, no screen draws anything of it**. Settings hides its fields, because each
+depends on the switch; the rest of the app asks `useConnectionOn(key)` and draws nothing while that says false (it also says false until the
+saved switch has been read, so a stranger never sees a flash of it). The first user is Lampas's **Logos** (Study resources: the Logos switch
+shows its library; the word sheet's Open in Logos buttons exist only while it is On); the second is **YNAB** in Postern.
+
+```tsx
+import { createConnections, createRegistry, createSettingsStore, link } from 'pwa-kit/settings';
+
+const store = createSettingsStore({ read: (k) => localStorage.getItem(k) ?? undefined, write: (k, v) => localStorage.setItem(k, v) });
+const connections = createConnections<Section>(store);
+connections.register({
+  key: 'logos', name: 'Logos', section: 'resources', hint: 'Open words in your Logos library.',
+  fields: [{ key: 'library', label: 'Your library', hint: 'Which lexicons to open.', default: 'all',
+    allowed: { kind: 'choice', values: [{ value: 'all', label: 'All' }, { value: 'ticked', label: 'Ticked' }] } }],
+});
+const registry = createRegistry([...appEntries, ...connections.entries]); // the switch 'logos' and its field 'logos.library'
+
+function OpenInLogos({ word }: { word: string }) {
+  const on = connections.useConnectionOn('logos');
+  return on ? <a href={logosUrl(word)}>Open in Logos</a> : null; // nothing of it while Off
+}
+```
+
+The switch is saved as `'on'` or `'off'` under the connection's key (`logos`) and anything else reads as Off; a field is saved under
+`<key>.<field>` (`logos.library`). `connections.isOn(key)` is the same answer without React. A key nobody registered, a connection with no
+name and a field named twice throw when the app starts.
+
+## Links
+
+`link(key)` is the in-app route to a setting's row: `link('ynab')` is `#/settings?setting=ynab`. Pass the route your Settings screen is
+mounted at as a second argument (`link('ynab', '#/prefs')`). `settingKeyOf(address)` reads the key back, for the screen to scroll to the row,
+mark it and show it though a search or its switch would hide it (`rowsAt(rows, values, query, key)` keeps that row in view). The kit owns the
+form of the address; opening it is your router's.
+
 ## The pieces
 
 | Export | What it is |
@@ -100,6 +141,8 @@ A row whose value is not given is a dependency not met.
 | `defineSetting`, `isAllowed` | a setting declared once; whether a value is one a setting allows |
 | `rowsInOrder`, `visibleRows`, `neededFor`, `rowsAt`, `visibleGroups`, `groupOf`, `searchSettings`, `groupProblems`, `foldText` | the one list of rows, searched and hidden by what does not apply (pure functions over arrays you pass) |
 | `createSettingsStore`, `entryOf`, `createRegistry` | reading, saving and applying a change over injected storage |
+| `createConnections` (`register`, `entries`, `isOn`, `useConnectionOn`) | a connection: one switch, Off for a stranger, fields hidden while Off |
+| `link`, `settingKeyOf`, `SETTINGS_ROUTE` | the route to a setting's row, and the key an address asks for |
 | `SettingsHome`, `SettingsSearch`, `GroupButton`, `Found`, `TAP_TARGET` | the home screen and its pieces |
 
 ### The search

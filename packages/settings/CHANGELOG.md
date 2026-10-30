@@ -2,6 +2,16 @@
 
 Newest first. Breaking changes come first in a release, each with its migration in one sentence.
 
+## 0.2.0 (2026-10-30)
+
+- New: a connection kind, lifted from Lampas's Logos switch (mw-mr4xgrw.4). `createConnections(store)` registers a connection (`register({ key,
+  name, section, hint, fields })`): one switch, saved under the connection's key as `'on'` or `'off'` and **Off for a stranger**, and fields that
+  depend on it, saved as `<key>.<field>`. `connections.entries` goes to `createRegistry` with the app's own entries; `useConnectionOn(key)` is
+  live and is false until the saved switch is read, so a screen that draws only while it is true draws **nothing of a connection while it is
+  Off**; `isOn(key)` is the same answer without React. Additive.
+- New: `link(key)` is the in-app route to a setting's row (`#/settings?setting=ynab`; `link(key, route)` for a Settings screen mounted
+  elsewhere) and `settingKeyOf(address)` reads the key back. Lampas's `settingLink` and `settingKeyOf` without its registry check and its router.
+
 ## 0.1.0 (2026-10-22)
 
 - New: `defineSetting`, the registry, the row list and `SettingsHome`, carved from Lampas's `src/settings` (mw-79en7t.6):

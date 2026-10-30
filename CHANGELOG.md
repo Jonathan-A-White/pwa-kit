@@ -16,6 +16,14 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/settings](packages/settings/CHANGELOG.md)
 - [@pwa-kit/requests](packages/requests/CHANGELOG.md)
 
+## 0.12.0 (2026-10-30, not yet tagged)
+
+- New: `pwa-kit/settings` has a connection kind (`createConnections`, `useConnectionOn`): one switch that is Off for a stranger, fields that show
+  only while it is On, and nothing of it drawn while it is Off; and `link(key)`, the in-app route to any setting's row. Additive
+  (mw-mr4xgrw.4).
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0,
+  app-update 0.2.0, picture-viewer 0.1.0, settings 0.2.0, requests 0.2.0.
+
 ## 0.11.0 (2026-10-26, not yet tagged)
 
 - New: `pwa-kit/requests` knows two more statuses, `built-differently` (final: the factory answered the ask another way; drawn as
