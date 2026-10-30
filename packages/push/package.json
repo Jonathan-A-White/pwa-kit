@@ -1,0 +1,19 @@
+{
+  "name": "@pwa-kit/push",
+  "version": "0.1.0",
+  "description": "pwa-kit: Notify me on a phone: the permission asked in plain words, the push subscription posted to the app's backend through a signer the app injects, and unsubscribe. The backend, the key and the service worker are the app's.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**",
+    "!**/*.tsbuildinfo"
+  ]
+}
