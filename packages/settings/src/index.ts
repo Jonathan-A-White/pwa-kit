@@ -6,3 +6,6 @@ export { MAX_CHANGES, TEXT_MAX, createRegistry, createSettingsStore, entryOf } f
 export type { AppliedChange, ChangeResult, Registry, RegistryOptions, RowMeta, SettingEntry, SettingsStorage, SettingsStore } from './registry.js';
 export { Found, GroupButton, SettingsHome, SettingsSearch, TAP_TARGET } from './SettingsHome.js';
 export type { FoundProps, SettingsHomeProps } from './SettingsHome.js';
+export { createConnections } from './connection.js';
+export type { Connection, ConnectionField, ConnectionSpec, Connections } from './connection.js';
+export { SETTINGS_ROUTE, link, settingKeyOf } from './link.js';
