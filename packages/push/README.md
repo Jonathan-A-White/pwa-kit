@@ -4,6 +4,19 @@ Notify me on a phone: the permission asked in plain words, the push subscription
 and unsubscribe. Lifted from Postern's `src/services/push.ts`. The backend, the key and the service worker are the app's; the kit holds the
 sequence and the words. It imports nothing and has no dependency.
 
+<!-- toc -->
+
+- [Install](#install)
+- [Set up](#set-up)
+- [The three calls](#the-three-calls)
+- [The words](#the-words)
+- [iOS](#ios)
+- [Account-scoped registrations](#account-scoped-registrations)
+- [Testing an app that uses it](#testing-an-app-that-uses-it)
+- [API](#api)
+
+<!-- /toc -->
+
 ## Install
 
 From GitHub, by pinned commit (there is no registry; `prepare` builds the libraries on install). The repo's
