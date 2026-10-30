@@ -1,0 +1,19 @@
+{
+  "name": "@pwa-kit/outbox",
+  "version": "0.1.0",
+  "description": "pwa-kit: every write queued in the app's Dexie table first, sent one at a time with a timeout and a growing retry wait, a client id per write so a retry never doubles, only while the page is online and visible, and an honest status line for the screen.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**",
+    "!**/*.tsbuildinfo"
+  ]
+}
