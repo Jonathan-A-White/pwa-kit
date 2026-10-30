@@ -15,6 +15,17 @@ Each library keeps its own changelog; this one records the repo's releases and p
 - [@pwa-kit/picture-viewer](packages/picture-viewer/CHANGELOG.md)
 - [@pwa-kit/settings](packages/settings/CHANGELOG.md)
 - [@pwa-kit/requests](packages/requests/CHANGELOG.md)
+- [@pwa-kit/push](packages/push/CHANGELOG.md)
+
+## 0.13.0 (2026-10-30, not yet tagged)
+
+- New: `pwa-kit/push`: `createPush` with `subscribe()`, `unsubscribe()` and `status()`, Notify me on a phone, lifted from Postern's push
+  (mw-mr4xgrw.7): the permission asked in plain words, the subscription posted to the backend once through a signer the app injects
+  (bsv-kit's `Door` fits), a denied permission or an unsupported phone as a status with its one plain line, and the removal posted on
+  unsubscribe. The backend, the key and the service worker are the app's, passed in. No dependencies. See
+  [packages/push](packages/push/README.md).
+- Package versions: whats-new 0.1.2, tips 0.2.0, test-preset 0.1.0, alive 0.1.0, tap 0.1.0, day 0.1.0, launch-gate 0.1.0,
+  app-update 0.2.0, picture-viewer 0.1.0, settings 0.2.0, requests 0.2.0, push 0.1.0.
 
 ## 0.12.0 (2026-10-30, not yet tagged)
 

@@ -17,6 +17,7 @@ export default defineConfig({
       'pwa-kit/picture-viewer': fileURLToPath(new URL('./packages/picture-viewer/src/index.ts', import.meta.url)),
       'pwa-kit/settings': fileURLToPath(new URL('./packages/settings/src/index.ts', import.meta.url)),
       'pwa-kit/requests': fileURLToPath(new URL('./packages/requests/src/index.ts', import.meta.url)),
+      'pwa-kit/push': fileURLToPath(new URL('./packages/push/src/index.ts', import.meta.url)),
       'pwa-kit/alive': fileURLToPath(new URL('./packages/alive/src/index.ts', import.meta.url)),
       'pwa-kit/whats-new': fileURLToPath(new URL('./packages/whats-new/src/index.ts', import.meta.url)),
     },

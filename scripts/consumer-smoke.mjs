@@ -1,6 +1,6 @@
 // The consumer smoke test: installs pwa-kit the way an app does, `npm install git+file://<a fresh clone>`,
 // into a scratch directory, and checks from there what a git install must deliver:
-//   - the exports map names the sixteen entry points (and package.json), nothing else;
+//   - the exports map names the seventeen entry points (and package.json), nothing else;
 //   - 'pwa-kit/tips' imports, keeps a dismissal through an injected storage, and its import graph reaches no other
 //     pwa-kit library;
 //   - 'pwa-kit/whats-new' renders with the React the app installs, its styles.css is packed, and its import graph
@@ -21,7 +21,9 @@
 //     renders the home with the app's React; its styles.css is packed and its import graph reaches no other pwa-kit library;
 //   - 'pwa-kit/requests' files a request from a talk once a day, refuses past its budget, lists the expected asks as rows, takes a
 //     status through a reader and renders the list grouped by who asked with the app's React; its import graph reaches no other
-//     pwa-kit library.
+//     pwa-kit library;
+//   - 'pwa-kit/push' subscribes through a fake push manager and a fake signer, posts the subscription once, reads on, says the
+//     one plain line for a denied permission and unsubscribes; its import graph reaches no other pwa-kit library.
 // The "fresh clone" is the working tree as it stands (tracked and untracked files, minus what git ignores),
 // committed into a scratch repository, so an edit not yet committed is smoke-tested too.
 // Run: npm run smoke   (needs the network or a warm npm cache: the install runs the build with devDependencies)
@@ -59,7 +61,7 @@ try {
   run('npm', ['install', '--no-audit', '--no-fund', `git+file://${clone}`], app, { timeout: 480_000 });
   const installed = join(app, 'node_modules', 'pwa-kit');
 
-  // The exports map names the sixteen entry points (and package.json), nothing else: no deep imports.
+  // The exports map names the seventeen entry points (and package.json), nothing else: no deep imports.
   const entries = Object.keys(JSON.parse(readFileSync(join(installed, 'package.json'), 'utf-8')).exports).sort();
   const expected = [
     './alive',
@@ -69,6 +71,7 @@ try {
     './launch-gate',
     './package.json',
     './picture-viewer',
+    './push',
     './requests',
     './settings',
     './settings/styles.css',
@@ -80,7 +83,7 @@ try {
     './whats-new/styles.css',
   ];
   if (JSON.stringify(entries) !== JSON.stringify(expected)) throw new Error('exports: ' + entries.join(', '));
-  console.log('the exports map names the sixteen entry points');
+  console.log('the exports map names the seventeen entry points');
 
   // Each library stands alone: walk an installed entry point's import graph and fail on any other pwa-kit library.
   const specifier = /\b(?:import|export)\s[^'"`;]*?\bfrom\s*['"]([^'"]+)['"]|\bimport\s*['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
@@ -404,6 +407,38 @@ console.log('pwa-kit/requests imports');
 `,
   );
   console.log(run('node', ['requests.mjs'], app).trim());
+  // 13. 'pwa-kit/push' with a fake push manager, a fake permission and a fake signer: subscribed and posted once, status on, a denied
+  // permission as a status with its plain line, and the removal on unsubscribe.
+  for (const file of ['index.js', 'subscribe.js', 'words.js', 'index.d.ts']) {
+    if (!existsSync(join(installed, 'packages/push/dist', file))) throw new Error(`packages/push/dist/${file} is not packed`);
+  }
+  standsAlone('packages/push/dist/index.js');
+  writeFileSync(
+    join(app, 'push.mjs'),
+    `
+import { DEFAULT_WORDS, createPush } from 'pwa-kit/push';
+
+const posts = [];
+const signer = { fetch: async (path, init) => (posts.push(path + ' ' + (init?.method ?? 'GET')), { ok: true, status: 200, json: async () => ({}) }) };
+let held = false;
+const sub = { endpoint: 'https://push.example/1', toJSON: () => ({ endpoint: 'https://push.example/1', keys: {} }), unsubscribe: async () => ((held = false), true) };
+const registration = { pushManager: { subscribe: async () => ((held = true), sub), getSubscription: async () => (held ? sub : null) } };
+const vapid = 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM';
+const make = (permission) => createPush({
+  signer, publicKeyHex: '02' + 'ab'.repeat(32), vapidPublicKey: vapid, registration: async () => registration, supported: () => true,
+  notification: { permission: 'default', requestPermission: async function () { return (this.permission = permission); } },
+});
+const push = make('granted');
+await push.subscribe();
+if (posts.join() !== '/push/subscribe POST' || (await push.status()).state !== 'on') throw new Error('subscribe: ' + posts.join());
+await push.unsubscribe();
+if (posts.join() !== '/push/subscribe POST,/push/unsubscribe POST' || (await push.status()).state !== 'off') throw new Error('unsubscribe: ' + posts.join());
+const blocked = await make('denied').subscribe();
+if (blocked.state !== 'denied' || blocked.line !== DEFAULT_WORDS.denied || posts.length !== 2) throw new Error('denied: ' + JSON.stringify(blocked));
+console.log('pwa-kit/push imports');
+`,
+  );
+  console.log(run('node', ['push.mjs'], app).trim());
   console.log('consumer smoke test passed');
 } catch (err) {
   console.error(String(err?.stderr ?? '') || err);

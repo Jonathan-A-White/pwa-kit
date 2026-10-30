@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 const script = fileURLToPath(new URL('./consumer-smoke.mjs', import.meta.url));
 
 describe.skipIf(process.env.PWA_KIT_SKIP_SMOKE === '1')('a consumer install of pwa-kit', () => {
-  it('installs from git, keeps a tip dismissed, renders What\'s new and runs test-preset, alive, tap, day, launch-gate, app-update, picture-viewer, settings and requests', () => {
+  it('installs from git, keeps a tip dismissed, renders What\'s new and runs test-preset, alive, tap, day, launch-gate, app-update, picture-viewer, settings, requests and push', () => {
     let output = '';
     try {
       output = execFileSync('node', [script], { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 540_000 });
@@ -17,7 +17,7 @@ describe.skipIf(process.env.PWA_KIT_SKIP_SMOKE === '1')('a consumer install of p
       const e = /** @type {{ stdout?: string, stderr?: string }} */ (err);
       throw new Error(`consumer smoke test failed:\n${e.stdout ?? ''}\n${e.stderr ?? ''}`);
     }
-    expect(output).toContain('the exports map names the sixteen entry points');
+    expect(output).toContain('the exports map names the seventeen entry points');
     expect(output).toContain('pwa-kit/tips imports');
     expect(output).toContain('pwa-kit/test-preset imports');
     expect(output).toContain('pwa-kit/whats-new renders');
@@ -29,6 +29,7 @@ describe.skipIf(process.env.PWA_KIT_SKIP_SMOKE === '1')('a consumer install of p
     expect(output).toContain('pwa-kit/picture-viewer imports');
     expect(output).toContain('pwa-kit/settings imports');
     expect(output).toContain('pwa-kit/requests imports');
+    expect(output).toContain('pwa-kit/push imports');
     expect(output).toContain('consumer smoke test passed');
   }, 600_000);
 });

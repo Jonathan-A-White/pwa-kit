@@ -38,12 +38,16 @@ were lifted from [bsv-kit](https://github.com/Jonathan-A-White/bsv-kit), where t
   and who asked, the same words twice in a day as one request, a budget per day, the expected asks listed for the settings and the
   status of each seen through a reader the app injects, and `RequestsList` grouped by who asked. Sending, storage and the reader are the
   app's. See [packages/requests](packages/requests/README.md).
+- `@pwa-kit/push`: Notify me on a phone (`createPush`: `subscribe()`, `unsubscribe()`, `status()`): the permission asked in plain words, the push
+  subscription posted to the backend once through a signer the app injects (bsv-kit's `Door` fits), a denied permission or an
+  unsupported phone as a status with its one plain line. The backend, the key and the service worker are the app's. No dependencies. See
+  [packages/push](packages/push/README.md).
 
 What belongs here: what an installed app tells the person about itself (its releases, its tips), with app-shell state
-kept through storage the app hands in. Nothing here needs a key, a server or a browser API beyond `localStorage` and the
+kept through storage the app hands in. Nothing here needs a key or a server of its own (push takes the app's signer), or a browser API beyond `localStorage`, the push manager and the
 service worker's registration. Each library imports nothing from the other; a test in each says so.
 
-What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate, app-update, picture-viewer, settings and requests need `react` (picture-viewer `react-dom` too) (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips and test-preset need none. React
+What's new needs React 18 or later (`react`, `react-dom`) and alive, tap, launch-gate, app-update, picture-viewer, settings and requests need `react` (picture-viewer `react-dom` too) (tap's core, `createTapGuard`, and its testing helper, and launch-gate's core, `openWithin`, need none); tips, test-preset and push need none. React
 is an optional peer dependency, so an app that uses only tips or test-preset installs no React for them. day needs
 nothing; ESLint 9 is the optional peer of `pwa-kit/day/eslint` alone.
 
@@ -68,7 +72,7 @@ npm install github:Jonathan-A-White/pwa-kit#c1ccd6aa6a596aa88c6d4866435b4301a23d
 ```
 
 That commit is the first with whats-new and tips, pwa-kit 0.1.0 (whats-new 0.1.2, tips 0.2.0); test-preset and alive
-come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0) picture-viewer with 0.8.0, settings with 0.9.0 (the connection kind and `link` with 0.12.0), requests with 0.10.0 (the statuses built-differently and moved with 0.11.0), so pin a later commit for them, by its full SHA, the same way.
+come with pwa-kit 0.2.0, tap with 0.3.0, day with 0.4.0 launch-gate with 0.5.0 and app-update with 0.6.0 (its async `hasNewsSince` and the quiet take-over's reload with 0.7.0) picture-viewer with 0.8.0, settings with 0.9.0 (the connection kind and `link` with 0.12.0), requests with 0.10.0 (the statuses built-differently and moved with 0.11.0), push with 0.13.0, so pin a later commit for them, by its full SHA, the same way.
 
 npm 11 warns that `pwa-kit` has an install script (`prepare`, the build) not yet covered by `allowScripts`. Allow it
 with `npm install-scripts approve pwa-kit`, which adds an entry to your `package.json` keyed by the install line, for
@@ -298,6 +302,19 @@ const result = await requests.fileFromTalk({ talkId: 'talk-12', words: 'I want a
 
 See [packages/requests](packages/requests/README.md).
 
+`pwa-kit/push`: Notify me on a phone. The backend, the signer (bsv-kit's `Door` fits) and the service worker are the app's.
+
+```ts
+import { createPush } from 'pwa-kit/push';
+
+const push = createPush({ signer: door, publicKeyHex, vapidPublicKey }); // vapidPublicKey is read from the backend when left out
+await push.status();      // { state: 'on' | 'off' | 'denied' | 'unsupported', line: 'the one plain line to show' }
+await push.subscribe();   // asks the phone's permission, subscribes, posts the subscription once; a blocked phone is a status, not an error
+await push.unsubscribe(); // cancels the subscription and posts the removal
+```
+
+On an iPhone it works only for an app on the Home Screen (iOS 16.4 or later). See [packages/push](packages/push/README.md).
+
 ## Modules
 
 | Entry point | Exports | What it is |
@@ -316,6 +333,7 @@ See [packages/requests](packages/requests/README.md).
 | `pwa-kit/settings` | `defineSetting`, `createRegistry`, `createSettingsStore`, `entryOf`, `rowsInOrder`, `visibleRows`, `neededFor`, `rowsAt`, `visibleGroups`, `SettingsHome`, ... | settings declared once, searched, hidden when they do not apply, and a settings home (React) |
 | `pwa-kit/settings/styles.css` | | its default look |
 | `pwa-kit/requests` | `createRequests`, `createJsonStore`, `defineExpectedAsks`, `askRows`, `watchStatuses`, `RequestsList`, `GROWN_UP`, ... | a request to the maker filed from a talk, once a day, under a budget, with who asked and the status seen (React) |
+| `pwa-kit/push` | `createPush`, `DEFAULT_WORDS`, `PushError`, `urlBase64ToBytes` | Notify me on a phone: permission in plain words, the subscription posted through the app's signer, unsubscribe |
 | `pwa-kit/launch-gate` | `LaunchGate`, `openWithin`, `LaunchTimeout`, `DEFAULT_LAUNCH_WORDS` | a launch gate: opens the store with a timeout, says what it waits on, offers Try again (React) |
 
 ## Develop
